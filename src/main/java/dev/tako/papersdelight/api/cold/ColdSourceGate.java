@@ -7,10 +7,7 @@ import java.util.function.Predicate;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-/**
- * 冷源判定入口: 冷源清单属于 PapersBrewin, 由它在启动时注册实现, PapersDelight 通过这里查询.
- * <p><strong>实现没注册或判定抛异常时返回 {@code false}</strong>, 拿不准就当非冷源, 顶多相关进度不触发.
- */
+/** 冷源判定入口; 没注册实现或判定抛异常时返回 {@code false}, 拿不准就当非冷源. */
 public final class ColdSourceGate {
 
     private static volatile Predicate<Block> service;

@@ -131,7 +131,6 @@ public final class DamageTypes {
         }
     }
 
-    /** 查询本进程记录过的伤害类型句柄, 没有则返回 {@code null}. */
     static DamageTypeHandle peek(Key key) {
         return HANDLES.get(key);
     }

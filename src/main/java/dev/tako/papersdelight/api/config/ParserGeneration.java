@@ -4,10 +4,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Supplier;
 
-/**
- * CraftEngine parser 的一轮注册, 只有生效的那一轮能发布数据.
- * <p>PapersDelight 每轮加载换一个新 generation, 旧的自动失活; 发布与失活共用一把读写锁, 旧 generation 覆盖不了新快照.
- */
+/** CraftEngine parser 的一轮注册, 只有生效的那一轮能发布数据. */
 public final class ParserGeneration {
     private static final AtomicLong IDS = new AtomicLong();
     private static final ReentrantReadWriteLock COMMIT_LOCK = new ReentrantReadWriteLock(true);

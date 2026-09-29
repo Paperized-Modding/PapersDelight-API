@@ -6,10 +6,7 @@ import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.plugin.Plugin;
 
-/**
- * 限时效果的 PDC 存取, 把剩余 tick, 总时长, 等级与额外状态写进玩家存档, 无需数据库.
- * <p>存的是剩余量而不是到期时间戳, 所以离线期间冻结, 重连接着走.
- */
+/** 限时效果的 PDC 存取, 不需要数据库. */
 public final class EffectPdcStore {
 
     private static final byte[] EMPTY = new byte[0];

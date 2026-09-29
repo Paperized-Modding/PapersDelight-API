@@ -7,10 +7,7 @@ import java.util.function.Predicate;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-/**
- * 热源判定入口: PapersDelight 启动时注册实现, 附属插件用它判断方块此刻是不是激活热源.
- * <p><strong>实现没注册或判定抛异常时返回 {@code false}</strong>, 判不出来就当它不是才安全.
- */
+/** 热源判定入口; 没注册实现或判定抛异常时返回 {@code false}, 判不出来当它不是才安全. */
 public final class HeatSourceGate {
 
     private static volatile Predicate<Block> service;

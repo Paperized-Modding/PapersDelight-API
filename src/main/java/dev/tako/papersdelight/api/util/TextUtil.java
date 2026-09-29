@@ -13,7 +13,6 @@ import java.util.regex.Pattern;
 
 /**
  * 文本解析工具: 把配置字符串转成 Adventure {@link Component}, 认 PAPI 占位符, MiniMessage 与 § / {@code &} 色码; MiniMessage 格式错误时回退传统解析.
- * <p><strong>PAPI 是否可用由宿主通过 {@link #setPapiAvailability} 注入</strong>, 没注入就一律跳过占位符解析.
  */
 public final class TextUtil {
 

@@ -2,7 +2,7 @@ package dev.tako.papersdelight.api.util;
 
 import java.util.concurrent.ThreadLocalRandom;
 
-/** 粒子与音效的密度节流: 附近同类粒子源太多时按概率跳过一部分, PD 各 Manager 与附属插件共用同一份公式. */
+/** 粒子/音效密度节流: 同一区域同时活跃的粒子源太多时按比例跳过一部分. */
 public final class ParticleThrottle {
 
     private ParticleThrottle() {}

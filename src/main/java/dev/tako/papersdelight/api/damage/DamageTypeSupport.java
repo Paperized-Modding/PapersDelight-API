@@ -7,10 +7,6 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.Objects;
 
-/**
- * 伤害类型注册能力与适配器类名的版本探测工具.
- * <p><strong>本类不能 import 或静态引用 1.21.4+ 的专有类型</strong>, 探测全部靠反射完成, 以保持 paper-api 1.21 的 {@code compileOnly} 编译基线.
- */
 public final class DamageTypeSupport {
 
     private static final @NotNull String REGISTRY_EVENTS_CLASS_NAME =
@@ -24,7 +20,6 @@ public final class DamageTypeSupport {
     private static final @NotNull String ADAPTER_V1_21_11 =
             "dev.tako.papersdelight.bridge.v1_21_11.DamageTypeComposeRegistrar";
 
-    /** legacy 1.21.4 区间适配器的类名, 运行时请改用 {@link #currentAdapterClassName()}. */
     public static final @NotNull String ADAPTER_CLASS_NAME = ADAPTER_V1_21_4;
 
     private static final boolean REGISTRY_EVENT_CAPABILITY_PRESENT = computeRegistryEventCapabilityPresent();
@@ -39,7 +34,6 @@ public final class DamageTypeSupport {
         return REGISTRY_EVENT_CAPABILITY_PRESENT;
     }
 
-    /** legacy 1.21.4 适配器类在 classpath 里能不能加载, 不代表当前运行版本的适配器存在. */
     public static boolean isAdapterClassPresent() {
         return ADAPTER_CLASS_PRESENT;
     }

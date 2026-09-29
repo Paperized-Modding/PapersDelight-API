@@ -9,10 +9,7 @@ import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-/**
- * 高级标签判定入口: PapersDelight 启动时注册实现, 附属插件用它判断物品有没有命中某个高级标签.
- * <p><strong>实现没注册或判定抛异常时一律返回 {@code false}</strong>, 不会把物品误判成命中.
- */
+/** 高级标签判定入口; 没注册实现或判定抛异常时一律返回 {@code false}. */
 public final class AdvancedTagGate {
 
     private static volatile BiPredicate<ItemStack, String> service;

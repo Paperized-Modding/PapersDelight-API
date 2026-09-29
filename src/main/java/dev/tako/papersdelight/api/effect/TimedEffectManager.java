@@ -22,9 +22,9 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * 限时效果管理器: 替子类管好倒计时, BossBar 与重登恢复, 所有管理器共用一张静态表, 附属插件 compileOnly 引入时与 PapersDelight 是同一份.
- * <p>子类按需覆写 {@link #onApply}, {@link #onRemove}, {@link #onRestore}, {@link #onExpire} 与 {@link #onEffectTick} 注入逻辑, 有额外状态要持久化再覆写 {@link #serializeExtra} 与 {@link #deserializeExtra}.
- * <p><strong>applyEffect 与 removeEffect 必须在玩家所在线程调用</strong>. 剩余时间存玩家 PDC, 离线冻结, 重登接着走, 主动移除与死亡会清掉 PDC.
+ * 限时效果管理器: 替子类管倒计时, BossBar 与重登恢复.
+ * <p>子类按需覆写 {@link #onApply}, {@link #onRemove}, {@link #onRestore}, {@link #onExpire}, {@link #onEffectTick} 注入逻辑, 有额外状态要持久化再覆写 {@link #serializeExtra} 与 {@link #deserializeExtra}.
+ * <p><strong>{@code applyEffect}/{@code removeEffect} 必须在玩家所在线程调用</strong>; 剩余时间存玩家 PDC, 离线冻结, 重登接着走, 主动移除与死亡会清掉.
  */
 public abstract class TimedEffectManager implements Listener {
 
@@ -197,7 +197,7 @@ public abstract class TimedEffectManager implements Listener {
 
     /** 效果被移除的原因, 供子类在 {@code onRemove} 里区分处理. */
     public enum RemovalCause {
-        /** 喝奶, 随机移除这类主动清除. */
+        /** 喝奶或随机移除这类主动清除. */
         CONSUMED,
         /** 玩家死亡. */
         DEATH

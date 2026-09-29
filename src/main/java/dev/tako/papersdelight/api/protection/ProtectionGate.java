@@ -8,7 +8,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * 方块保护检查: 复用 CraftEngine 内置的 AntiGriefLib 判断玩家能不能和自定义方块交互, CE 或保护插件出问题时一律放行(fail-open).
+ * 方块保护检查: 玩家能不能和这个自定义方块交互; CE 或保护插件出问题时一律放行(fail-open).
  * <p><strong>必须在方块所属的主线程/region 线程同步调用</strong>.
  */
 public final class ProtectionGate {
@@ -18,7 +18,6 @@ public final class ProtectionGate {
     private static final String FLAG_CLASS =
             "net.momirealms.craftengine.libraries.antigrieflib.Flag";
 
-    /** 0=未解析 1=可用 2=不可用 */
     private static volatile int state = 0;
 
     private static Method ceInstance;

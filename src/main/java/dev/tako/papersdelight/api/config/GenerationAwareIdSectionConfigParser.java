@@ -9,7 +9,6 @@ import java.util.Objects;
 
 /**
  * 带 generation 判定的 {@link IdSectionConfigParser}: 已经失活的那轮提交上来的数据会被直接跳过.
- * <p>给附属插件实现自己的 parser 用; PapersDelight 每轮加载换一个新的 {@link ParserGeneration}, 常驻 parser 不会拿旧数据污染新快照.
  */
 public abstract class GenerationAwareIdSectionConfigParser extends IdSectionConfigParser {
     private volatile ParserGeneration generation;

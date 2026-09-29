@@ -5,7 +5,7 @@ import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.plugin.Plugin;
 
-/** 粒子可见性检测: 查目标位置附近有没有玩家; 无状态, {@link #register} 与 {@link #clear} 只是兼容旧调用的空壳. */
+/** 粒子可见性检查: 目标位置附近有没有玩家. */
 public final class ParticleVisibility {
 
     private ParticleVisibility() {}
