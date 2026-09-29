@@ -4,7 +4,7 @@
 </h1>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Maven-dev.tako%3Apapersdelight--api%3A2.0.0-blue" alt="Maven 2.0.0">
+  <img src="https://img.shields.io/badge/Maven-dev.tako%3Apapersdelight--api%3A3.0.0-blue" alt="Maven 3.0.0">
   <img src="https://img.shields.io/badge/Java-21-orange" alt="Java 21">
   <img src="https://img.shields.io/badge/Paper%20%2F%20Folia-1.21.x-3fb950" alt="Paper / Folia 1.21.x">
   <img src="https://img.shields.io/badge/Addon-API-5865F2" alt="附属插件 API">
@@ -15,13 +15,13 @@
   <a href="README.md">English</a> | <b>简体中文</b>
 </p>
 
-<p align="center"><i>PapersDelight 的附属插件 API：菜单框架、配方类型、持续效果、伤害类型、CraftEngine 工具与 Folia 感知调度器。</i></p>
+<p align="center"><i>PapersDelight 的附属插件 API：菜单框架、配方类型、物品匹配、伤害类型契约与能力门 —— 只提供契约，不含任何运行时实现。</i></p>
 
 ---
 
 ## 📖 这是什么
 
-`PapersDelight-API` 是 **PapersDelight 插件与附属插件之间的契约**。它只包含接口、抽象基类和工具类——具体实现随 PapersDelight 插件 jar 一起分发，所以附属插件用 `compileOnly` 引入即可。
+`PapersDelight-API` 是 **PapersDelight 插件与附属插件之间的契约**。它只包含接口、record 与门（Gate）——具体实现随 PapersDelight 插件 jar 一起分发，所以附属插件用 `compileOnly` 引入即可。
 
 - 你按这个 artifact 写附属插件代码；
 - 运行时由 PapersDelight 插件提供这些类（`join-classpath`）；
@@ -34,15 +34,14 @@
 | 包 | 作用 |
 | --- | --- |
 | `dev.tako.papersdelight.api` | `PapersDelightApi` —— API 版本契约（`VERSION`、`isCompatible(int)`） |
-| `…api.menu` | GUI 框架：`Menu`、`MenuItem`、`MenuModule`、`SimpleMenuModule`、`MenuManager`、`MenuEventHandler`、`ClickHandler` 与注解辅助 |
+| `…api.menu` | GUI 契约：`Menu`、`MenuItem`、`MenuModule`、`SimpleMenuModule`、`MenuEventHandler`、`ClickHandler` 与注解辅助；以及 `MenuService`——插件通过 Bukkit 服务管理器发布的运行时句柄 |
 | `…api.recipe` | `RecipeTypeRegistry` / `RecipeTypeHandler` —— 注册你自己的配方类型（由 CraftEngine 配置 section 解析） |
-| `…api.effect` | `TimedEffectManager` —— 带 BossBar 计时与 PDC 持久化的持续效果基类 |
-| `…api.damage` | `DamageTypes` / `DamageTypeDefinition` —— 在 bootstrap 阶段注册自定义伤害类型 |
-| `…api.ce` | `CraftEngineUtil` —— 读写 CustomBlockState、物品 ID、创建 CE 物品、放置 CE 方块、访问包管理器 |
+| `…api.damage` | `DamageTypeDefinition` / `DamageTypeHandle` / `DamageTypeRegistrationState` —— 自定义伤害类型的数据契约 |
 | `…api.config` | `GenerationAwareIdSectionConfigParser`、`ParserGeneration` —— 可重载安全的 CraftEngine 配置 parser 基类 |
 | `…api.item` | 物品匹配器与高级标签门（`AdvancedTagGate`），用于把附属插件物品暴露给 PapersDelight 机制 |
 | `…api.heat`、`…api.cold`、`…api.protection` | 门（Gate）：让附属插件告诉 PapersDelight 什么算热源/冷源，或某次交互是否受保护 |
-| `cn.chengzhimeow.ccscheduler` | 调度统一走 **CC-Scheduler**（`CCScheduler.getInstance()`）：global / region / chunk / entity / async 任务，Paper 与 Folia 通用 |
+
+这里的一切都是**契约**：接口、record、builder 与门。本 artifact 刻意**不含菜单引擎、效果引擎、CraftEngine 工具与调度器**——运行时实现全部由 PapersDelight 主插件持有，因此引入这份 API 不会给你的附属插件带来任何第三方依赖。
 
 ## 🚀 快速开始
 
@@ -59,7 +58,7 @@ repositories {
 ```kotlin
 dependencies {
     compileOnly("io.papermc.paper:paper-api:1.21-R0.1-SNAPSHOT")
-    compileOnly("dev.tako:papersdelight-api:2.0.0")
+    compileOnly("dev.tako:papersdelight-api:3.0.0")
 }
 ```
 
@@ -67,7 +66,7 @@ dependencies {
 
 ```groovy
 dependencies {
-    compileOnly 'dev.tako:papersdelight-api:2.0.0'
+    compileOnly 'dev.tako:papersdelight-api:3.0.0'
 }
 ```
 
@@ -82,12 +81,19 @@ dependencies {
 <dependency>
     <groupId>dev.tako</groupId>
     <artifactId>papersdelight-api</artifactId>
-    <version>2.0.0</version>
+    <version>3.0.0</version>
     <scope>provided</scope>
 </dependency>
 ```
 
-> ℹ️ 这个 artifact **刻意不声明任何传递依赖**：请继续使用你自己的 Paper/Folia 编译目标（如果代码要用 CraftEngine 类型，自行添加 CE 依赖）。
+> ℹ️ 这个 artifact **不声明任何依赖**：`paper-api`、CraftEngine、PlaceholderAPI 都只是编译期使用（不会写进 POM），请继续使用你自己的 Paper/Folia 编译目标（如果代码要用 CraftEngine 类型，自行添加 CE 依赖）。
+>
+> ℹ️ 主插件持有的 GUI 引擎以服务形式暴露，而不是类：
+>
+> ```java
+> MenuService menus = MenuService.get();   // 等价于 Bukkit.getServicesManager().load(MenuService.class)
+> if (menus != null) menus.openMenu(player, "my_module");
+> ```
 
 ### 1. 声明对 PapersDelight 的依赖
 
@@ -122,7 +128,7 @@ public void onEnable() {
 
 ## 🧪 示例附属插件
 
-[`example/`](example/) 里有一个完整可构建的示例：注册一个 GUI 模块、施加自定义持续效果、并使用 Folia 感知调度器。
+[`example/`](example/) 里有一个完整可构建的示例：注册一个 GUI 模块、用附属插件自己的 Bukkit 调度跑持续效果，不触碰 API 的任何实现。
 
 ```java
 public final class ExampleAddon extends JavaPlugin {
@@ -137,7 +143,7 @@ public final class ExampleAddon extends JavaPlugin {
         ExampleEffect effect = new ExampleEffect(this);
         getServer().getPluginManager().registerEvents(effect, this);
 
-        MenuManager.getInstance().registerModule(new SimpleMenuModule.Builder()
+        MenuService.get().registerModule(new SimpleMenuModule.Builder()
                 .id("example")
                 .menu(ExampleMenu::create)
                 .handler(new ExampleMenuHandler(effect))
@@ -155,9 +161,9 @@ cd example
 
 ## 🔢 版本与兼容性
 
-- API 与插件本体**独立版本号**（这里是 `2.x`，插件是 `PapersDelight 1.2.x`）。
-- **2.0.0 是不兼容版本**：旧的 `dev.tako.papersdelight.api.util` 工具已移除，调度改用
-  [CC-Scheduler](https://repo-eo.catnies.top/#/releases/cn/chengzhimeow/CC-Scheduler)（作为本 artifact 的依赖发布）。
+- API 与插件本体**独立版本号**（这里是 `3.x`，插件是 `PapersDelight 1.2.x`）。
+- **3.0.0 是不兼容版本**：所有实现都移出 API。`MenuManager`、`TimedEffectManager`、`EffectPdcStore`、`CraftEngineUtil`、`DamageTypes` 与旧的 `api.util` 工具现在都在 PapersDelight 主插件里，API 也不再依赖 CC-Scheduler（主插件内部依然用 CC-Scheduler 调度，那是插件自己的事）。
+- 需要主插件的 GUI 引擎时，它是以服务形式发布的：`MenuService.get()`，返回 `null` 说明没装 PapersDelight 或版本过旧。
 - 次版本号只做**新增**；兼容区间由 `PapersDelightApi.MINIMUM_COMPATIBLE_VERSION` ~ `PapersDelightApi.VERSION` 表达。
 - 启动时请用 `PapersDelightApi.isCompatible(你编译时的版本)` 判断，而不是硬编码版本号。
 - `dev.tako.papersdelight.api.*` 豁免混淆：类名与方法名都属于对外契约。

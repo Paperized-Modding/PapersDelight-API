@@ -13,7 +13,6 @@ dependencyResolutionManagement {
         maven("https://repo.papermc.io/repository/maven-public/")
         maven("https://repo.momirealms.net/releases/")
         maven("https://repo.extendedclip.com/content/repositories/placeholderapi/")
-        maven("https://repo-eo.catnies.top/releases/")
     }
     versionCatalogs {
         create("libs") {

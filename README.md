@@ -4,7 +4,7 @@
 </h1>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Maven-dev.tako%3Apapersdelight--api%3A2.0.0-blue" alt="Maven 2.0.0">
+  <img src="https://img.shields.io/badge/Maven-dev.tako%3Apapersdelight--api%3A3.0.0-blue" alt="Maven 3.0.0">
   <img src="https://img.shields.io/badge/Java-21-orange" alt="Java 21">
   <img src="https://img.shields.io/badge/Paper%20%2F%20Folia-1.21.x-3fb950" alt="Paper / Folia 1.21.x">
   <img src="https://img.shields.io/badge/Addon-API-5865F2" alt="Addon API">
@@ -15,13 +15,13 @@
   <b>English</b> | <a href="README_zh.md">简体中文</a>
 </p>
 
-<p align="center"><i>The addon-facing API of PapersDelight: menus, recipe types, timed effects, damage types, CraftEngine helpers and Folia-safe schedulers.</i></p>
+<p align="center"><i>The addon-facing API of PapersDelight: menus, recipe types, item matchers, damage-type contracts and capability gates — contracts only, no runtime implementations.</i></p>
 
 ---
 
 ## 📖 What is this?
 
-`PapersDelight-API` is the **contract between the PapersDelight plugin and addon plugins**. It only contains interfaces, base classes and utilities — the implementations ship inside the PapersDelight plugin jar, which is why addons link against this artifact with `compileOnly`.
+`PapersDelight-API` is the **contract between the PapersDelight plugin and addon plugins**. It only contains interfaces, records and gates — the implementations ship inside the PapersDelight plugin jar, which is why addons link against this artifact with `compileOnly`.
 
 - You write addon code against this artifact.
 - The PapersDelight plugin provides the classes at runtime (`join-classpath`).
@@ -34,15 +34,14 @@
 | Package | Provides |
 | --- | --- |
 | `dev.tako.papersdelight.api` | `PapersDelightApi` — API version contract (`VERSION`, `isCompatible(int)`) |
-| `…api.menu` | GUI framework: `Menu`, `MenuItem`, `MenuModule`, `SimpleMenuModule`, `MenuManager`, `MenuEventHandler`, `ClickHandler`, annotation helpers |
+| `…api.menu` | GUI contracts: `Menu`, `MenuItem`, `MenuModule`, `SimpleMenuModule`, `MenuEventHandler`, `ClickHandler`, annotation helpers — plus `MenuService`, the runtime handle the plugin publishes through the Bukkit service manager |
 | `…api.recipe` | `RecipeTypeRegistry` / `RecipeTypeHandler` — register your own recipe types parsed from CraftEngine config sections |
-| `…api.effect` | `TimedEffectManager` — timed potion-effect style mechanics with boss bar timer and PDC persistence |
-| `…api.damage` | `DamageTypes` / `DamageTypeDefinition` — register custom damage types at bootstrap time |
-| `…api.ce` | `CraftEngineUtil` — read/write CustomBlockState, item ids, create CE items, place CE blocks, access pack manager |
+| `…api.damage` | `DamageTypeDefinition` / `DamageTypeHandle` / `DamageTypeRegistrationState` — data contracts for custom damage types |
 | `…api.config` | `GenerationAwareIdSectionConfigParser`, `ParserGeneration` — base classes for reload-safe CraftEngine config parsers |
 | `…api.item` | Item matchers and the advanced-tag gate (`AdvancedTagGate`) used to expose addon items to PapersDelight mechanics |
 | `…api.heat`, `…api.cold`, `…api.protection` | Gates that let addons tell PapersDelight what counts as a heat/cold source, or whether an interaction is protected |
-| `cn.chengzhimeow.ccscheduler` | Scheduling is delegated to **CC-Scheduler** (`CCScheduler.getInstance()`): global / region / chunk / entity / async tasks that work on both Paper and Folia |
+
+Everything here is a **contract**: interfaces, records, builders and gates. The artifact deliberately contains **no menu engine, no effect engine, no CraftEngine helper and no scheduler** — the PapersDelight plugin owns every runtime implementation, so depending on this API never drags a third-party library into your addon.
 
 ## 🚀 Getting started
 
@@ -59,7 +58,7 @@ repositories {
 ```kotlin
 dependencies {
     compileOnly("io.papermc.paper:paper-api:1.21-R0.1-SNAPSHOT")
-    compileOnly("dev.tako:papersdelight-api:2.0.0")
+    compileOnly("dev.tako:papersdelight-api:3.0.0")
 }
 ```
 
@@ -67,7 +66,7 @@ dependencies {
 
 ```groovy
 dependencies {
-    compileOnly 'dev.tako:papersdelight-api:2.0.0'
+    compileOnly 'dev.tako:papersdelight-api:3.0.0'
 }
 ```
 
@@ -82,12 +81,19 @@ dependencies {
 <dependency>
     <groupId>dev.tako</groupId>
     <artifactId>papersdelight-api</artifactId>
-    <version>2.0.0</version>
+    <version>3.0.0</version>
     <scope>provided</scope>
 </dependency>
 ```
 
-> ℹ️ The artifact declares **no transitive dependencies** on purpose: keep using your own Paper/Folia compile target (and add CraftEngine yourself if your code touches CE types).
+> ℹ️ The artifact declares **no dependencies at all**: `paper-api`, CraftEngine and PlaceholderAPI are compile-time only and are not published, so keep using your own Paper/Folia compile target (and add CraftEngine yourself if your code touches CE types).
+>
+> ℹ️ The plugin-owned GUI engine is reached through a service, not a class:
+>
+> ```java
+> MenuService menus = MenuService.get();   // == Bukkit.getServicesManager().load(MenuService.class)
+> if (menus != null) menus.openMenu(player, "my_module");
+> ```
 
 ### 1. Depend on PapersDelight
 
@@ -122,7 +128,7 @@ public void onEnable() {
 
 ## 🧪 Example addon
 
-A complete, buildable addon lives in [`example/`](example/) — it registers a GUI module, applies a custom timed effect and uses the Folia-aware scheduler:
+A complete, buildable addon lives in [`example/`](example/) — it registers a GUI module, runs its own Bukkit-scheduled effect and uses no API implementation:
 
 ```java
 public final class ExampleAddon extends JavaPlugin {
@@ -137,7 +143,7 @@ public final class ExampleAddon extends JavaPlugin {
         ExampleEffect effect = new ExampleEffect(this);
         getServer().getPluginManager().registerEvents(effect, this);
 
-        MenuManager.getInstance().registerModule(new SimpleMenuModule.Builder()
+        MenuService.get().registerModule(new SimpleMenuModule.Builder()
                 .id("example")
                 .menu(ExampleMenu::create)
                 .handler(new ExampleMenuHandler(effect))
@@ -155,9 +161,9 @@ cd example
 
 ## 🔢 Versioning & compatibility
 
-- The API is versioned **independently** from the plugin (`2.x` here vs. `PapersDelight 1.2.x`).
-- **2.0.0 is a breaking release**: the old `dev.tako.papersdelight.api.util` helpers were removed — scheduling now uses
-  [CC-Scheduler](https://repo-eo.catnies.top/#/releases/cn/chengzhimeow/CC-Scheduler) (declared as a dependency of this artifact).
+- The API is versioned **independently** from the plugin (`3.x` here vs. `PapersDelight 1.2.x`).
+- **3.0.0 is a breaking release**: every implementation left the API. `MenuManager`, `TimedEffectManager`, `EffectPdcStore`, `CraftEngineUtil`, `DamageTypes` and the old `api.util` helpers now live inside the PapersDelight plugin, and the API no longer depends on CC-Scheduler (the plugin still schedules with CC-Scheduler internally — that is its own business).
+- Need the plugin’s GUI engine? It is published as a service: `MenuService.get()`; a `null` result means PapersDelight is missing or too old.
 - Minor bumps only **add** members; the compatibility window is expressed by
   `PapersDelightApi.MINIMUM_COMPATIBLE_VERSION` … `PapersDelightApi.VERSION`.
 - Always verify with `PapersDelightApi.isCompatible(yourCompiledVersion)` at startup instead of hard-coding versions.

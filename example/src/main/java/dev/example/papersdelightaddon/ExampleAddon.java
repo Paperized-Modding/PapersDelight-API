@@ -1,9 +1,9 @@
 package dev.example.papersdelightaddon;
 
 import dev.tako.papersdelight.api.PapersDelightApi;
-import dev.tako.papersdelight.api.menu.MenuManager;
+import dev.tako.papersdelight.api.menu.MenuService;
 import dev.tako.papersdelight.api.menu.SimpleMenuModule;
-import cn.chengzhimeow.ccscheduler.scheduler.CCScheduler;
+import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.JavaPlugin;
 
 public final class ExampleAddon extends JavaPlugin {
@@ -21,20 +21,28 @@ public final class ExampleAddon extends JavaPlugin {
         effect = new ExampleEffect(this);
         getServer().getPluginManager().registerEvents(effect, this);
 
-        MenuManager.getInstance().registerModule(new SimpleMenuModule.Builder()
-                .id(ExampleMenu.MODULE_ID)
-                .menu(ExampleMenu::create)
-                .handler(new ExampleMenuHandler(effect))
-                .build());
+        MenuService menus = MenuService.get();
+        if (menus == null) {
+            getLogger().warning("PapersDelight menu service is unavailable, GUI module not registered.");
+        } else {
+            menus.registerModule(new SimpleMenuModule.Builder()
+                    .id(ExampleMenu.MODULE_ID)
+                    .menu(ExampleMenu::create)
+                    .handler(new ExampleMenuHandler(effect))
+                    .build());
+        }
 
-        CCScheduler.getInstance().getGlobalRegionScheduler()
-                .runTaskTimer(this, 200L, 1200L, () -> getLogger().info("ExampleAddon heartbeat"));
+        Bukkit.getScheduler().runTaskTimer(this, () -> getLogger().info("ExampleAddon heartbeat"), 200L, 1200L);
 
         getLogger().info("ExampleAddon enabled (PapersDelight API v" + PapersDelightApi.VERSION + ")");
     }
 
     @Override
     public void onDisable() {
+        MenuService menus = MenuService.get();
+        if (menus != null) {
+            menus.unregisterModule(ExampleMenu.MODULE_ID);
+        }
         if (effect != null) {
             effect.stopAll();
         }
