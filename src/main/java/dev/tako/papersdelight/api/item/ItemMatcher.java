@@ -11,9 +11,8 @@ import java.util.Locale;
 import java.util.Map;
 
 /**
- * 不可变物品匹配表达式。
- * 支持裸物品 ID、普通标签（{@code #namespace:tag}）、高级标签
- * （{@code advtag:namespace:tag}）以及以上表达式的 any-of 列表。
+ * 不可变物品匹配表达式, 支持裸物品 ID, 普通标签({@code #namespace:tag})与高级标签({@code advtag:namespace:tag}).
+ * <p>多个表达式之间是 any-of.
  */
 public final class ItemMatcher {
 
@@ -77,9 +76,7 @@ public final class ItemMatcher {
         return expressions;
     }
 
-    /**
-     * 与表达式输入顺序无关的稳定键，可用于索引或缓存；实际命中仍应调用 {@link #matches}。
-     */
+    /** 与表达式书写顺序无关的稳定键, 可以当索引或缓存 key; 真正判断命中还是要调 {@link #matches}. */
     public String stableKey() {
         return stableKey;
     }

@@ -7,18 +7,8 @@ import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.plugin.Plugin;
 
 /**
- * 限时效果会话的 PDC 持久化。
- *
- * <p>PD 三效果与 PB 四效果共用：把「剩余 tick / 总时长 / 等级 / 额外状态」写进玩家
- * {@link PersistentDataContainer}，随玩家存档保存，无需数据库。存的是剩余量，
- * 离线冻结、重连续期。</p>
- *
- * <p>每个效果用两把 key：
- * <ul>
- *   <li>{@code <plugin>:effect_<id>} — {@code int[]{remaining, total, amplifier}}</li>
- *   <li>{@code <plugin>:effect_<id>_extra} — {@code byte[]} 子类额外状态</li>
- * </ul>
- * </p>
+ * 限时效果的 PDC 存取: 把剩余 tick, 总时长, 等级和额外状态写进玩家存档, 无需数据库.
+ * <p>存的是剩余量而不是到期时间戳, 所以离线期间冻结, 重连接着走; 额外状态由子类序列化成 {@code byte[]} 一并存下.
  */
 public final class EffectPdcStore {
 
@@ -28,15 +18,15 @@ public final class EffectPdcStore {
     private final NamespacedKey extraKey;
 
     /**
-     * @param plugin   命名空间来源（用 {@link NamespacedKey#NamespacedKey(Plugin, String)}）
-     * @param effectId 效果标识（如 {@code nourishment}、{@code tipsy}）
+     * @param plugin   插件实例, 用作 PDC key 的命名空间
+     * @param effectId 效果标识(如 {@code nourishment}, {@code tipsy}), 改了会丢存档
      */
     public EffectPdcStore(Plugin plugin, String effectId) {
         this.coreKey = new NamespacedKey(plugin, "effect_" + effectId);
         this.extraKey = new NamespacedKey(plugin, "effect_" + effectId + "_extra");
     }
 
-    /** 写入会话快照。{@code remainingTicks <= 0} 视为无效，直接清除。 */
+    /** 写入会话快照, {@code remainingTicks <= 0} 视为无效, 直接清除. */
     public void save(Player player, int remainingTicks, int totalTicks, int amplifier, byte[] extra) {
         if (player == null) return;
         if (remainingTicks <= 0) {
@@ -49,7 +39,7 @@ public final class EffectPdcStore {
         pdc.set(extraKey, PersistentDataType.BYTE_ARRAY, extra == null ? EMPTY : extra);
     }
 
-    /** 读回会话快照；无存档返回 {@code null}。 */
+    /** 读回会话快照, 没有存档返回 {@code null}. */
     public EffectPdcRecord read(Player player) {
         if (player == null) return null;
         PersistentDataContainer pdc = player.getPersistentDataContainer();
@@ -59,7 +49,7 @@ public final class EffectPdcStore {
         return new EffectPdcRecord(core[0], core[1], core[2], extra == null ? EMPTY : extra);
     }
 
-    /** 删除该效果的全部 PDC 数据。 */
+    /** 删除该效果的全部 PDC 数据. */
     public void clear(Player player) {
         if (player == null) return;
         PersistentDataContainer pdc = player.getPersistentDataContainer();

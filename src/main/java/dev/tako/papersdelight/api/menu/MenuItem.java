@@ -9,9 +9,9 @@ public class MenuItem {
     private final boolean interactive;
 
     /**
-     * @param itemStack 显示的物品
-     * @param actionId  行为标识，用于事件分发
-     * @param interactive 是否允许玩家自由存取物品（false 表示点击被取消，仅触发事件处理）
+     * @param itemStack 显示的物品, 内部会 clone
+     * @param actionId 行为标识, 事件分发用
+     * @param interactive 是否允许玩家自由存取(false 表示点击被取消, 只触发事件)
      */
     public MenuItem(ItemStack itemStack, String actionId, boolean interactive) {
         this.itemStack = itemStack.clone();
@@ -19,7 +19,7 @@ public class MenuItem {
         this.interactive = interactive;
     }
 
-    /** 兼容旧代码：默认不可交互（静态展示物/按钮） */
+    /** 默认不可交互, 用于静态展示物与按钮. */
     public MenuItem(ItemStack itemStack, String actionId) {
         this(itemStack, actionId, false);
     }
@@ -32,11 +32,7 @@ public class MenuItem {
         return actionId;
     }
 
-    /**
-     * 该槽位是否允许玩家自由放进/取出物品。
-     * true  → 不取消点击，玩家可以正常移动物品
-     * false → 取消点击，物品被锁定在槽位中（装饰物/按钮）
-     */
+    /** 是否允许玩家自由存取物品: {@code false} 时点击被取消, 物品锁在槽里. */
     public boolean isInteractive() {
         return interactive;
     }

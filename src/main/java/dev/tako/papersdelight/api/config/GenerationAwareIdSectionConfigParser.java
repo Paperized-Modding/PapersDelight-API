@@ -8,9 +8,9 @@ import net.momirealms.craftengine.core.plugin.config.IdSectionConfigParser;
 import java.util.Objects;
 
 /**
- * 阻止已失活的 generation 继续参与解析或发布。
- * CE 26.8 的 registerConfigSectionParser 会把 parser 永久写入 BuiltInRegistries.CONFIG_PARSER，
- * unregister 无法移除，因此 parser 实例常驻、靠 generation 判定是否生效。
+ * 带 generation 判定的 {@link IdSectionConfigParser}: 失活那轮提交上来的数据会被直接跳过.
+ * <p>给附属插件实现自己的 parser 用. PapersDelight 每轮加载会换一个新的 {@link ParserGeneration},
+ * 只有当前生效的那一轮会真正解析和发布, 旧一轮留下的常驻 parser 不会污染新数据.
  */
 public abstract class GenerationAwareIdSectionConfigParser extends IdSectionConfigParser {
     private volatile ParserGeneration generation;
@@ -20,45 +20,39 @@ public abstract class GenerationAwareIdSectionConfigParser extends IdSectionConf
         this(generation, () -> { });
     }
 
+    /**
+     * @param generation   本轮解析绑定的 generation
+     * @param beforeCommit 提交快照前先跑的钩子, 可用来准备数据
+     */
     protected GenerationAwareIdSectionConfigParser(ParserGeneration generation, Runnable beforeCommit) {
         this.generation = Objects.requireNonNull(generation, "generation");
         this.beforeCommit = Objects.requireNonNull(beforeCommit, "beforeCommit");
     }
 
-    /**
-     * 把常驻 parser 绑定到新一轮 generation。
-     * CE 26.8 无法从 CONFIG_PARSER registry 移除 parser，所以实例常驻、
-     * 每轮 enable 通过重绑 generation 来切换生效批次。
-     */
+    /** 把常驻 parser 绑到新一轮 generation. */
     public final void rebindGeneration(ParserGeneration next) {
         Objects.requireNonNull(next, "next");
         ParserGeneration.runExclusive(() -> this.generation = next);
     }
 
-    /**
-     * 当前绑定的 generation 是否处于生效状态。
-     *
-     * <p>{@code public} 而非 {@code protected}：附属插件的 parser 位于其他包，
-     * 需要用它判断本轮解析是否应当继续。</p>
-     */
+    /** 当前绑定的 generation 是否还在生效, 据此判断要不要继续解析. */
     public final boolean generationActive() {
         return generation.isActive();
     }
 
     /**
-     * 仅在 generation 生效时执行状态变更。
+     * generation 还在生效时执行状态变更.
      *
-     * @return 实际执行了变更则 {@code true}；generation 已失活则 {@code false}
+     * @return 真的执行了返回 {@code true}, generation 已失活返回 {@code false}
      */
     public final boolean runIfGenerationActive(Runnable mutation) {
         return generation.commitIfActive(mutation);
     }
 
     /**
-     * 在 generation 生效时提交快照，提交前先跑 {@code beforeCommit} 钩子。
+     * generation 还在生效时提交快照, 提交前先跑一遍 {@code beforeCommit}.
      *
-     * <p>{@code public} 理由同 {@link #runIfGenerationActive(Runnable)}：
-     * 附属插件的 parser 需要在自己的 {@code postProcess} 里调用它发布快照。</p>
+     * @return 真的提交了返回 {@code true}, generation 已失活返回 {@code false}
      */
     public final boolean commitIfGenerationActive(Runnable commit) {
         return runIfGenerationActive(() -> {
@@ -84,8 +78,8 @@ public abstract class GenerationAwareIdSectionConfigParser extends IdSectionConf
 
     @Override
     public void clearConfigs() {
-        // CE 26.8 的 IdConfigParser 在 checkDuplicated=false 时 idToPath 持有 Map.of()，
-        // 直接调用 super.clearConfigs() 会对不可变 map 执行 clear()。
+        // CE 26.8 的 IdConfigParser 在 checkDuplicated=false 时 idToPath 持有 Map.of(),
+        // 直接调用 super.clearConfigs() 会对不可变 map 执行 clear().
         this.configStorage.clear();
         this.pendingConfigSections.clear();
         if (checkDuplicated()) clearIdToPath();

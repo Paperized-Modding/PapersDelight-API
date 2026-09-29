@@ -1,7 +1,7 @@
 package dev.tako.papersdelight.api.item;
 
 /**
- * 将不可变匹配表达式与具体物品运行时解耦的解析接口。
+ * 告诉 {@link ItemMatcher} 怎么判断物品是否命中物品 ID, 普通标签或高级标签, 由调用方按自己的物品类型实现.
  *
  * @param <T> 待匹配物品的运行时类型
  */

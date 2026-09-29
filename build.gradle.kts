@@ -22,6 +22,10 @@ tasks {
         options.encoding = "UTF-8"
         options.compilerArgs.add("-Xlint:deprecation")
     }
+    withType<Javadoc>().configureEach {
+        options.encoding = "UTF-8"
+        (options as StandardJavadocDocletOptions).addStringOption("Xdoclint:all,-missing", "-quiet")
+    }
     jar {
         archiveFileName.set("papersdelight-api-${project.version}.jar")
     }

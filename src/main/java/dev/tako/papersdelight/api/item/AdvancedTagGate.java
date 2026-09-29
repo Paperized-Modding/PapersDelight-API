@@ -10,12 +10,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * 高级标签判定门面 —— 由 PapersDelight Server payload 在初始化时注册实现。
- *
- * <p>使用 push 注册而不是从 Client 类加载器反射查找 Server 类，避免正式云载环境中的
- * 父子类加载器隔离导致 Server 侧高级标签服务不可见。</p>
- *
- * <p>PD 不可用或判定异常时返回 {@code false}，避免把任意物品误判为命中标签。</p>
+ * 高级标签判定入口: PapersDelight 启动时注册实现, 附属插件用它判断物品有没有命中某个高级标签.
+ * <p><strong>实现没注册或判定抛异常时一律返回 {@code false}</strong>, 不会把物品误判成命中.
  */
 public final class AdvancedTagGate {
 
@@ -26,12 +22,12 @@ public final class AdvancedTagGate {
     private AdvancedTagGate() {
     }
 
-    /** 注册 PapersDelight 的高级标签判定实现。传入 null 会抛出异常。 */
+    /** 注册判定实现, 通常在 PapersDelight 启动时调用; 传 {@code null} 会抛异常. */
     public static void register(BiPredicate<ItemStack, String> resolver) {
         register(resolver, null);
     }
 
-    /** 注册高级标签判定与已编译标签展开实现。 */
+    /** 注册判定实现与标签展开实现(高级标签 → 已编译的物品 ID 列表). */
     public static void register(BiPredicate<ItemStack, String> resolver,
                                 Function<String, List<String>> expander) {
         service = Objects.requireNonNull(resolver, "resolver");
@@ -39,18 +35,18 @@ public final class AdvancedTagGate {
         warned = false;
     }
 
-    /** 注销当前实现，通常在 Server payload 停止时调用。 */
+    /** 注销实现, 通常在 PapersDelight 停止时调用. */
     public static void unregister() {
         service = null;
         expansionService = null;
     }
 
     /**
-     * 物品是否命中某高级标签（依 PapersDelight 的 advanced_tags 定义）。
+     * 物品有没有命中这个高级标签(依 PapersDelight 的 advanced_tags 定义).
      *
-     * @param item  待判定物品
-     * @param tagId 高级标签 id（可带或不带 {@code advtag:} 前缀）
-     * @return true 当且仅当已注册实现判定命中；未注册或异常时返回 false
+     * @param item 待判定物品
+     * @param tagId 高级标签 id, 带不带 {@code advtag:} 前缀都行
+     * @return 命中返回 {@code true}; 没注册实现或判定失败时返回 {@code false}
      */
     public static boolean isAdvancedTagged(ItemStack item, String tagId) {
         if (item == null || item.isEmpty() || tagId == null || tagId.isBlank()) return false;
@@ -65,10 +61,10 @@ public final class AdvancedTagGate {
     }
 
     /**
-     * 展开高级标签为已编译的物品 ID 列表。
+     * 把高级标签展开成已编译的物品 ID 列表.
      *
-     * @param tagId 高级标签 ID，可带或不带 {@code advtag:} 前缀
-     * @return 有序且不可变的物品 ID 列表；未注册、非法或异常时为空列表
+     * @param tagId 高级标签 id, 带不带 {@code advtag:} 前缀都行
+     * @return 有序且不可变的物品 ID 列表; 没注册实现或展开失败时是空列表
      */
     public static List<String> resolveItems(String tagId) {
         if (tagId == null || tagId.isBlank()) return List.of();
@@ -85,7 +81,7 @@ public final class AdvancedTagGate {
         }
     }
 
-    /** 供测试与诊断：当前是否没有可用的高级标签实现。 */
+    /** 当前没有可用的判定实现, 供测试与诊断. */
     public static boolean isUnavailable() {
         return service == null;
     }

@@ -21,20 +21,19 @@ import java.util.function.Consumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+/**
+ * GUI 管理器: 注册 {@link MenuModule}, 再按 moduleId 给玩家打开菜单.
+ * <p>点击, 拖拽, 关闭事件统一由它接管, 未注册槽位与非交互槽位都会被锁死.
+ */
 public final class MenuManager implements Listener {
 
     private static MenuManager instance;
     private final Map<UUID, MenuSession> openSessions = new ConcurrentHashMap<>();
     private final Map<String, MenuModule> registeredModules = new ConcurrentHashMap<>();
-    /** 每 tick 每玩家只处理一个点击，防止整理 mod 瞬间多点触发 GUI 切换 */
+    /** 每 tick 每玩家只处理一个点击,防止整理 mod 瞬间多点触发 GUI 切换 */
     private final Map<UUID, Integer> lastClickTick = new ConcurrentHashMap<>();
 
-    /**
-     * 错误日志文案来源。
-     *
-     * <p>api 模块不依赖宿主的配置中心，所以文案由宿主注入；
-     * 未注入时使用内置英文默认值。入参为文案 key 与默认值。</p>
-     */
+    /** 错误日志文案的来源, 由宿主注入; 没注入就直接用内置 fallback. */
     private volatile BiFunction<String, String, String> messageResolver = (key, fallback) -> fallback;
 
     private MenuManager() {}
@@ -45,9 +44,9 @@ public final class MenuManager implements Listener {
     }
 
     /**
-     * 由宿主插件注入本地化文案来源（如配置中心）。
+     * 注入错误日志的本地化文案, 由宿主插件在启动时调用.
      *
-     * @param resolver 接收 (key, fallback) 返回实际文案；传 {@code null} 恢复为使用 fallback
+     * @param resolver 收 (key, fallback) 返回实际文案; 传 {@code null} 恢复成直接用 fallback
      */
     public void setMessageResolver(BiFunction<String, String, String> resolver) {
         this.messageResolver = resolver != null ? resolver : (key, fallback) -> fallback;
@@ -63,20 +62,27 @@ public final class MenuManager implements Listener {
         }
     }
 
+    /** 注册菜单模块, 之后才能用它的 id 打开. */
     public void registerModule(MenuModule module) {
         registeredModules.put(module.getId(), module);
     }
 
+    /** 注销模块; 已经打开的菜单不受影响. */
     public void unregisterModule(String moduleId) {
         registeredModules.remove(moduleId);
     }
 
-    /** 打开 GUI，关闭时不触发额外回调 */
+    /** 打开 GUI, 关闭时不回调; moduleId 没注册就什么都不做. */
     public void openMenu(Player player, String moduleId) {
         openMenu(player, moduleId, null);
     }
 
-    /** 打开 GUI，关闭时将 Inventory 传给 onClose */
+    /**
+     * 打开 GUI.
+     * <p><strong>玩家自己关掉菜单时也会回调 {@code onClose}</strong>.
+     *
+     * @param onClose 收到被关闭的 Inventory; 传 {@code null} 表示不需要
+     */
     public void openMenu(Player player, String moduleId, Consumer<Inventory> onClose) {
         MenuModule module = registeredModules.get(moduleId);
         if (module == null) return;
@@ -113,7 +119,7 @@ public final class MenuManager implements Listener {
         int slot = event.getRawSlot();
         if (slot < 0) return;
 
-        // 同 tick 只处理第一个点击，后续忽略——防止一键整理瞬间多发点击触发 GUI 切换
+        // 同 tick 只处理第一个点击,后续忽略——防止一键整理瞬间多发点击触发 GUI 切换
         int currentTick = Bukkit.getCurrentTick();
         Integer lastTick = lastClickTick.put(player.getUniqueId(), currentTick);
         if (lastTick != null && lastTick == currentTick) {
@@ -135,7 +141,7 @@ public final class MenuManager implements Listener {
         MenuItem menuItem = session.menu().getItemAt(slot);
 
         if (menuItem == null) {
-            // 未注册的槽位默认锁定，防止物品被放入/取出后丢失
+            // 未注册的槽位默认锁定,防止物品被放入/取出后丢失
             event.setCancelled(true);
             return;
         }
@@ -209,7 +215,7 @@ public final class MenuManager implements Listener {
         event.setCurrentItem(remainder.getAmount() <= 0 ? null : remainder);
     }
 
-    /** Jug 只有输入槽；其余菜单保留原有碗/食材槽快捷移动语义。 */
+    /** Jug 只有输入槽; 其他菜单保留碗/食材槽的快捷移动语义. */
     static String quickMoveTargetAction(String moduleId, ItemStack moving) {
         if ("jug".equals(moduleId)) return "input_slot";
         return moving.getType() == Material.BOWL ? "utensil_slot" : "ingredient_slot";
@@ -234,7 +240,7 @@ public final class MenuManager implements Listener {
 
             MenuItem menuItem = session.menu().getItemAt(rawSlot);
             if (menuItem == null || !menuItem.isInteractive()) {
-                // 未注册的槽位或非交互槽位：禁止拖入
+                // 未注册的槽位或非交互槽位:禁止拖入
                 event.setCancelled(true);
                 return;
             }

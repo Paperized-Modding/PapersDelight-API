@@ -8,24 +8,9 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * 保护插件门面 —— 复用 CraftEngine 内置的 AntiGriefLib 实例。
- *
- * <p>CE 通过 shadow relocation 把 {@code net.momirealms.antigrieflib} 重定位到
- * {@code net.momirealms.craftengine.libraries.antigrieflib}，无法编译期引用，只能反射：</p>
- * <pre>
- * BukkitCraftEngine.instance().antiGriefProvider().test(Player, Flag, Object)
- * </pre>
- *
- * <p>复用而非自建实例：与 CE 共享 provider 注册、OP 放行（{@code ignoreOP(true)}）
- * 和绕过权限（{@code craftengine.antigrief.bypass}），且不重复打包 AntiGriefLib。</p>
- *
- * <p><b>fail-open：</b>任何反射失败或 provider 异常都放行，保证保护插件故障
- * 不会阻断 PapersDelight 的正常玩法。</p>
- *
- * <p>仅覆盖「保护插件未取消 Bukkit 事件」的残余场景 —— 取消事件的情况已由
- * 各监听器的 {@code ignoreCancelled = true} 处理。</p>
- *
- * <p>必须在方块所属的主线程/区域线程同步调用。</p>
+ * 方块保护检查: 复用 CraftEngine 内置的 AntiGriefLib, 判断玩家能不能和自定义方块交互.
+ * <p><strong>必须在方块所属的主线程/region 线程同步调用</strong>; CE 或保护插件出问题时一律放行(fail-open).
+ * <p>只覆盖保护插件没取消 Bukkit 事件的残余场景, 事件已经被取消的由各监听器自己处理.
  */
 public final class ProtectionGate {
 
@@ -48,13 +33,13 @@ public final class ProtectionGate {
     }
 
     /**
-     * 玩家能否与该位置的自定义方块交互。
-     * <p>只需要 INTERACT 一个 flag：放置/破坏已由各监听器的
-     * {@code ignoreCancelled = true} 覆盖，篮子容器由 CE 覆盖。</p>
+     * 玩家能不能和这个位置的自定义方块交互.
+     *
+     * @return 允许返回 {@code true}; 只有保护插件明确拒绝才返回 {@code false}
      */
     public static boolean canInteract(Player player, Location location) {
         if (player == null || location == null) return true;
-        // 必须先 resolve()：Flag 常量只在解析成功后才有值
+        // 必须先 resolve():Flag 常量只在解析成功后才有值
         if (!resolve() || flagInteract == null) return true;
 
         try {
@@ -69,7 +54,7 @@ public final class ProtectionGate {
         }
     }
 
-    /** 供测试与诊断：反射链是否已判定不可用 */
+    /** 反射链已经判定不可用, 供测试与诊断. */
     public static boolean isUnavailable() {
         return state == 2;
     }
@@ -82,7 +67,7 @@ public final class ProtectionGate {
             if (state != 0) return state == 1;
             try {
                 ClassLoader loader = ProtectionGate.class.getClassLoader();
-                // initialize=false：不触发 CE 静态初始化副作用
+                // initialize=false:不触发 CE 静态初始化副作用
                 Class<?> ceClass = Class.forName(CE_PLUGIN_CLASS, false, loader);
                 Class<?> flagClass = Class.forName(FLAG_CLASS, false, loader);
 

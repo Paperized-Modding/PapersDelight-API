@@ -5,11 +5,9 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Supplier;
 
 /**
- * 一次 CraftEngine parser 注册事务共享的生命周期 token。
- * CE 26.8 无法从 BuiltInRegistries.CONFIG_PARSER 移除 parser，实例在进程内常驻，
- * 因此每轮 enable 通过轮换 generation 来切换生效批次，失活批次必须自行拒绝发布。
- * parser publication 与 unregister/reset 共用同一把读写锁，避免旧 generation
- * 在失活后覆盖静态快照。
+ * CraftEngine parser 的一轮注册, 只有生效的那一轮能发布数据.
+ * <p>parser 实例在进程内常驻, 所以 PapersDelight 每轮加载换一个新的 generation, 旧的自然失活, 提交被拒;
+ * 发布与失活共用一把读写锁, 避免旧 generation 覆盖新快照.
  */
 public final class ParserGeneration {
     private static final AtomicLong IDS = new AtomicLong();
@@ -22,6 +20,7 @@ public final class ParserGeneration {
         this.active = active;
     }
 
+    /** 创建一个还没生效的 generation, 准备好之后再 {@link #activate()}. */
     public static ParserGeneration candidate() {
         return new ParserGeneration(false);
     }
@@ -42,7 +41,11 @@ public final class ParserGeneration {
         runExclusive(() -> active = true);
     }
 
-    /** 在共享 publication 读锁内再次确认 generation，并完成候选构造与发布。 */
+    /**
+     * generation 还生效时执行提交.
+     *
+     * @return 真的执行了返回 {@code true}, 已失活返回 {@code false}
+     */
     public boolean commitIfActive(Runnable commit) {
         COMMIT_LOCK.readLock().lock();
         try {
@@ -54,7 +57,7 @@ public final class ParserGeneration {
         }
     }
 
-    /** 在独占锁内执行 generation 切换、失活和快照重置。 */
+    /** 在独占锁内执行 generation 切换, 失活或快照重置. */
     public static void runExclusive(Runnable action) {
         supplyExclusive(() -> {
             action.run();
@@ -62,9 +65,7 @@ public final class ParserGeneration {
         });
     }
 
-    /**
-     * 在阻塞所有 parser publication 的同一把锁内读取跨 parser 状态，避免拿到半更新组合。
-     */
+    /** 在独占锁内读跨 parser 的状态, 避免读到改到一半的组合. */
     public static <T> T supplyExclusive(Supplier<T> action) {
         COMMIT_LOCK.writeLock().lock();
         try {

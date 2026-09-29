@@ -3,23 +3,20 @@ package dev.tako.papersdelight.api.util;
 import java.util.concurrent.ThreadLocalRandom;
 
 /**
- * 粒子密度节流工具 —— 统一实现 nearby/threshold 节流公式。
- * <p>当同区域粒子源过多时，按保留率概率性跳过部分粒子/音效，保持性能。</p>
- *
- * <p>位于 api 模块，供 PapersDelight 各 Manager 与下游插件（如 PapersBrewin
- * 芳杜锅蒸汽/沸腾音）共用同一份节流公式，避免多份实现漂移。</p>
+ * 粒子与音效的密度节流: 附近同类粒子源太多时, 按概率随机跳过一部分.
+ * <p>PD 各 Manager 与附属插件共用同一份公式.
  */
 public final class ParticleThrottle {
 
     private ParticleThrottle() {}
 
     /**
-     * 计算保留率（retention rate）。
+     * 计算这次的保留概率.
      *
-     * @param nearby 附近粒子源数量
-     * @param threshold 阈值，nearby ≤ threshold 时总是返回 1.0
-     * @param minimumRate 保底保留率，避免过度节流
-     * @return 保留率，范围 [minimumRate, 1.0]
+     * @param nearby 附近的同类粒子源数量
+     * @param threshold 超过这个数才开始节流
+     * @param minimumRate 保底保留率, 别节流过头
+     * @return 保留率, 范围 [minimumRate, 1.0]
      */
     public static double retentionRate(int nearby, int threshold, double minimumRate) {
         if (nearby <= threshold) return 1.0;
@@ -27,12 +24,9 @@ public final class ParticleThrottle {
     }
 
     /**
-     * 根据保留率判断是否应跳过当前粒子/音效。
+     * 按保留率掷一次骰子.
      *
-     * @param nearby 附近粒子源数量
-     * @param threshold 阈值
-     * @param minimumRate 保底保留率
-     * @return true 表示应跳过，false 表示应执行
+     * @return {@code true} 表示这次该跳过
      */
     public static boolean shouldSkip(int nearby, int threshold, double minimumRate) {
         double rate = retentionRate(nearby, threshold, minimumRate);

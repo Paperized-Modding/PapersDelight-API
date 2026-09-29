@@ -27,6 +27,10 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+/**
+ * CraftEngine 工具: 查/造自定义方块与物品.
+ * <p>CE 没装或还没就绪时都不抛异常, 按各方法的文档返回兜底值; <strong>方块状态与属性的读写必须在方块所属的 region/chunk 线程调用</strong>.
+ */
 public final class CraftEngineUtil {
     private static final Map<String, Material> BASE_MATERIAL_CACHE = new ConcurrentHashMap<>();
 
@@ -64,9 +68,9 @@ public final class CraftEngineUtil {
     }
 
     /**
-     * Reads CraftEngine's own loaded chunk storage instead of asking Bukkit/NMS for
-     * the block state. This keeps hot paths cheap and remains Folia-safe as long as
-     * callers stay on the owning region/chunk thread, which our schedulers do.
+     * 方块当前的 CE 状态, 只在方块所在区块已被 CE 加载时才有值.
+     *
+     * @return 非自定义方块或区块未加载时返回 {@code null}
      */
     public static ImmutableBlockState getCustomBlockState(Block block) {
         if (block == null) return null;
@@ -108,8 +112,8 @@ public final class CraftEngineUtil {
     }
 
     private static CEWorld getLoadedWorld(BukkitWorldManager manager, World world) {
-        // CE 26.8：getWorld(UUID) 返回 BukkitWorld，其 storageWorld() 才是 CEWorld；
-        // 未加载的世界返回 null，因此不再需要遍历兜底。
+        // CE 26.8:getWorld(UUID) 返回 BukkitWorld,其 storageWorld() 才是 CEWorld;
+        // 未加载的世界返回 null,因此不再需要遍历兜底.
         BukkitWorld bukkitWorld = manager.getWorld(world.getUID());
         if (bukkitWorld == null) return null;
         CEWorld ceWorld = bukkitWorld.storageWorld();
@@ -144,29 +148,23 @@ public final class CraftEngineUtil {
         return blockId != null && ids.contains(blockId);
     }
 
-    /**
-     * 检查一个 CE 方块 ID 是否有效（已在 CraftEngine 中注册）。
-     * 如果 CraftEngine 尚未加载任何方块（启动初期），跳过验证返回 true。
-     */
+    /** CE 方块 ID 是否已注册; CE 还没加载任何方块时跳过校验, 一律返回 {@code true}. */
     public static boolean isValidBlockId(String ceBlockId) {
         if (ceBlockId == null || ceBlockId.isEmpty()) return false;
         try {
             Key key = Key.of(ceBlockId);
             boolean found = CraftEngineBlocks.byId(key) != null;
             if (found) return true;
-            // byId 返回 null：可能是 ID 无效，也可能是 CraftEngine 尚未完成注册
-            // 如果 loadedBlocks() 为空，说明还在启动阶段，跳过验证
+            // byId 返回 null:可能是 ID 无效,也可能是 CraftEngine 尚未完成注册
+            // 如果 loadedBlocks() 为空,说明还在启动阶段,跳过验证
             return CraftEngineBlocks.loadedBlocks().isEmpty();
         } catch (Exception e) {
-            // 异常也说明 CraftEngine 可能尚未就绪，跳过验证
+            // 异常也说明 CraftEngine 可能尚未就绪,跳过验证
             return true;
         }
     }
 
-    /**
-     * 从 CE 方块 ID 获取其对应的原版 base Material（如 NOTE_BLOCK、TRIPWIRE）。
-     * CE 未加载或 ID 不存在时返回 null。
-     */
+    /** CE 方块 ID 对应的原版 base Material(如 NOTE_BLOCK, TRIPWIRE); CE 未加载或 ID 不存在时返回 {@code null}. */
     public static Material getBaseMaterial(String ceBlockId) {
         if (ceBlockId == null || ceBlockId.isEmpty()) return null;
         Material cached = BASE_MATERIAL_CACHE.get(ceBlockId);
@@ -238,13 +236,13 @@ public final class CraftEngineUtil {
     public static boolean isItem(ItemStack stack, String id) {
         if (stack == null || stack.isEmpty() || id == null || id.isEmpty()) return false;
 
-        // 标签匹配（#namespace:tag_name）
+        // 标签匹配(#namespace:tag_name)
         if (id.startsWith("#")) {
-            // CE 自定义物品标签优先（CE 物品可能在 settings.tags 中定义此标签）
+            // CE 自定义物品标签优先(CE 物品可能在 settings.tags 中定义此标签)
             var def = CraftEngineItems.byItemStack(stack);
             if (def != null && def.is(Key.of(id.substring(1)))) return true;
 
-            // Bukkit Material 标签（仅匹配非 CE 自定义物品，避免 base material 误判）
+            // Bukkit Material 标签(仅匹配非 CE 自定义物品,避免 base material 误判)
             if (!CraftEngineItems.isCustomItem(stack)) {
                 NamespacedKey tagKey = NamespacedKey.fromString(id.substring(1));
                 if (tagKey != null) {
@@ -255,13 +253,13 @@ public final class CraftEngineUtil {
             return false;
         }
 
-        // CE 自定义物品：先检查 CE ID，不做 Material fallback（避免 base material 误判）
+        // CE 自定义物品:先检查 CE ID,不做 Material fallback(避免 base material 误判)
         if (CraftEngineItems.isCustomItem(stack)) {
             Key key = CraftEngineItems.getCustomItemId(stack);
             return id.equals(key.toString()) || id.equals(key.value());
         }
 
-        // 原版物品：Material 匹配
+        // 原版物品:Material 匹配
         Material material = materialFromId(id);
         if (material != null && stack.getType() == material) return true;
 
@@ -283,10 +281,7 @@ public final class CraftEngineUtil {
         return false;
     }
 
-    /**
-     * 获取物品的标识符 —— CE 物品返回 CE ID，原版物品返回 Minecraft Key。
-     * 可用于持久化存储，配合 {@link #createItem(String, int)} 复原。
-     */
+    /** 物品的持久化标识: CE 物品给 CE ID, 原版物品给 Minecraft key; 配合 {@link #createItem(String, int)} 可以还原. */
     public static String getItemIdentifier(ItemStack stack) {
         if (stack == null || stack.isEmpty()) return null;
         String ceId = getCustomItemId(stack);
@@ -294,36 +289,29 @@ public final class CraftEngineUtil {
     }
 
     /**
-     * 查询物品的制作返还物（craft remainder）ID。
+     * 物品制作后返还的容器 ID(炖菜返还碗, 饮品返还玻璃瓶).
+     * <p>大部分配方不会显式写容器, 所以容器回退要来这里查.
      *
-     * <p>对齐 FD 的容器回退语义 —— FD 的 {@code CookingPotRecipe} 在配方未指定
-     * {@code container} 时，会取成品的 {@code getCraftingRemainingItem()} 当容器
-     * （炖菜返还碗、饮品返还玻璃瓶）。FD 全部厨锅配方都没写 container，靠的就是这条。</p>
-     *
-     * <p>双路查询：CE 自定义物品读 {@code ItemSettings.craftRemainder()}（该字段只存在
-     * 于 CE 配置注册表，不写进物品 NBT，所以 dumpitem 看不到）；原版物品回退到
-     * {@link Material#getCraftingRemainingItem()}。</p>
-     *
-     * @param itemId 物品 ID，CE ID 或 {@code minecraft:} 前缀的原版 ID
-     * @return 返还物 ID，无返还物 / 查询失败时返回 null
+     * @param itemId CE ID 或带 {@code minecraft:} 前缀的原版 ID
+     * @return 返还物 ID, 没有返还物或查询失败时返回 {@code null}
      */
     public static String getCraftRemainderId(String itemId) {
         if (itemId == null || itemId.isEmpty()) return null;
 
-        // CE 自定义物品：读 ItemSettings 里的 craft_remainder 配置
+        // CE 自定义物品:读 ItemSettings 里的 craft_remainder 配置
         if (!itemId.startsWith("minecraft:")) {
             try {
                 var definition = CraftEngineItems.byId(itemId);
                 if (definition != null) {
                     var remainder = definition.settings().craftRemainder();
                     if (remainder != null) {
-                        // hurt_and_break 类型会解引用第二个参数取耐久，必须传真实 Item
+                        // hurt_and_break 类型会解引用第二个参数取耐久,必须传真实 Item
                         var source = net.momirealms.craftengine.core.item.Item.byId(Key.of(itemId));
                         if (source != null) {
-                            // recipeId 仅被 recipe_based 类型用于查表，这里没有真实配方
-                            // 上下文，传物品自身 ID 让它走 fallback 分支
+                            // recipeId 仅被 recipe_based 类型用于查表,这里没有真实配方
+                            // 上下文,传物品自身 ID 让它走 fallback 分支
                             var result = remainder.remainder(Key.of(itemId), source);
-                            // hurt_and_break 耐久耗尽时返回 count=0，视作无返还物
+                            // hurt_and_break 耐久耗尽时返回 count=0,视作无返还物
                             if (result != null && result.count() > 0) {
                                 Key resultId = result.id();
                                 if (resultId != null) return resultId.toString();
@@ -336,7 +324,7 @@ public final class CraftEngineUtil {
             }
         }
 
-        // 原版物品：走 Bukkit 的 craftingRemainingItem
+        // 原版物品:走 Bukkit 的 craftingRemainingItem
         try {
             Material material = materialFromId(itemId);
             if (material != null && material.isItem()) {

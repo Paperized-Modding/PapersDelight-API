@@ -10,6 +10,11 @@ import org.bukkit.scheduler.BukkitTask;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
+/**
+ * 跨 Folia / Paper 的调度入口.
+ * <p>Folia 上按 region/chunk/entity 分派, 普通 Paper 上 region 任务等价于主线程任务; 所有 delay/period 都会被钳到至少 1 tick.
+ * <p>{@code runRegion*}, {@code runChunk*} 与 {@code runEntity*} 的任务体只应碰目标位置与实体, 需要全局操作就用 {@code runGlobal*}.
+ */
 public final class PaperScheduler {
 
     private static final Runnable NOOP_RUNNABLE = () -> {
@@ -30,6 +35,7 @@ public final class PaperScheduler {
     private PaperScheduler() {
     }
 
+    /** 在主线程(Paper)或位置所属的 region 线程(Folia)执行; location 无效时什么都不做, 已经在该线程上就直接同步执行. */
     public static TaskHandle runMainOrRegion(Plugin plugin, Location location, Runnable task) {
         if (location == null || location.getWorld() == null) return NOOP;
         if (isFolia()) {
@@ -42,14 +48,17 @@ public final class PaperScheduler {
         return wrap(Bukkit.getScheduler().runTask(plugin, task));
     }
 
+    /** 在全局 region 线程执行, 没有具体位置的任务用它. */
     public static TaskHandle runGlobal(Plugin plugin, Runnable task) {
         return wrap(Bukkit.getGlobalRegionScheduler().run(plugin, ignored -> task.run()));
     }
 
+    /** 延迟在全局 region 线程执行. */
     public static TaskHandle runGlobalLater(Plugin plugin, Runnable task, long delayTicks) {
         return wrap(Bukkit.getGlobalRegionScheduler().runDelayed(plugin, ignored -> task.run(), normalizeDelay(delayTicks)));
     }
 
+    /** 定时在全局 region 线程执行. */
     public static TaskHandle runGlobalTimer(Plugin plugin, Runnable task, long delayTicks, long periodTicks) {
         return wrap(Bukkit.getGlobalRegionScheduler().runAtFixedRate(
                 plugin,
@@ -59,21 +68,28 @@ public final class PaperScheduler {
         ));
     }
 
+    /** 在位置所属的 region 线程执行. */
     public static TaskHandle runRegion(Plugin plugin, Location location, Runnable task) {
         return runRegion(plugin, location, task, NOOP_RUNNABLE);
     }
 
-    /** 带退休回调的 region 调度 seam；旧 API 保持原有语义。 */
+    /**
+     * 在位置所属的 region 线程执行任务.
+     *
+     * @param retired 位置或世界无效时的回调
+     */
     public static TaskHandle runRegion(Plugin plugin, Location location, Runnable task, Runnable retired) {
         if (location == null || location.getWorld() == null) { retired.run(); return NOOP; }
         return wrap(Bukkit.getRegionScheduler().run(plugin, location, ignored -> task.run()));
     }
 
+    /** 延迟在位置所属的 region 线程执行. */
     public static TaskHandle runRegionLater(Plugin plugin, Location location, Runnable task, long delayTicks) {
         if (location == null || location.getWorld() == null) return NOOP;
         return wrap(Bukkit.getRegionScheduler().runDelayed(plugin, location, ignored -> task.run(), normalizeDelay(delayTicks)));
     }
 
+    /** 定时在位置所属的 region 线程执行. */
     public static TaskHandle runRegionTimer(Plugin plugin, Location location, Runnable task, long delayTicks, long periodTicks) {
         if (location == null || location.getWorld() == null) return NOOP;
         return wrap(Bukkit.getRegionScheduler().runAtFixedRate(
@@ -85,11 +101,13 @@ public final class PaperScheduler {
         ));
     }
 
+    /** 在区块所属的 region 线程执行. */
     public static TaskHandle runChunk(Plugin plugin, World world, int chunkX, int chunkZ, Runnable task) {
         if (world == null) return NOOP;
         return wrap(Bukkit.getRegionScheduler().run(plugin, world, chunkX, chunkZ, ignored -> task.run()));
     }
 
+    /** 延迟在区块所属的 region 线程执行. */
     public static TaskHandle runChunkLater(Plugin plugin, World world, int chunkX, int chunkZ, Runnable task, long delayTicks) {
         if (world == null) return NOOP;
         return wrap(Bukkit.getRegionScheduler().runDelayed(
@@ -103,9 +121,8 @@ public final class PaperScheduler {
     }
 
     /**
-     * 一次性异步任务。用于 IO（数据库读写）等不能占用主线程的操作。
-     *
-     * <p>插件已禁用时降级为当前线程直接执行——关服路径下调度器已不可用。</p>
+     * 一次性异步任务, 用于数据库读写这类不能占用主线程的操作.
+     * <p><strong>插件已禁用时会退化成在当前线程直接执行</strong>, 关服路径下调度器已经不可用了.
      */
     public static TaskHandle runAsync(Plugin plugin, Runnable task) {
         if (!plugin.isEnabled()) {
@@ -119,6 +136,7 @@ public final class PaperScheduler {
         return wrap(Bukkit.getAsyncScheduler().runNow(plugin, ignored -> task.run()));
     }
 
+    /** 异步定时任务, 延迟与周期按 tick 计. */
     public static TaskHandle runAsyncTimer(Plugin plugin, Runnable task, long delayTicks, long periodTicks) {
         return wrap(Bukkit.getAsyncScheduler().runAtFixedRate(
                 plugin,
@@ -129,24 +147,29 @@ public final class PaperScheduler {
         ));
     }
 
+    /** 在实体所属线程执行; 实体无效时什么都不做, 插件已禁用时退化为当前线程直接执行. */
     public static TaskHandle runEntity(Plugin plugin, Entity entity, Runnable task) {
         if (entity == null || !entity.isValid()) return NOOP;
         if (!plugin.isEnabled()) {
             try {
                 task.run();
             } catch (Throwable ignored) {
-                // 旧 API 无退休回调；关服清理仍保持就地执行语义。
+                // 旧 API 无退休回调;关服清理仍保持就地执行语义.
             }
             return NOOP;
         }
         return wrap(entity.getScheduler().run(plugin, ignored -> task.run(), NOOP_RUNNABLE));
     }
 
-    /** 带退休回调的 entity 调度 seam；旧 API 保持兼容。 */
+    /**
+     * 在实体所属线程执行任务.
+     *
+     * @param retired 实体无效时的回调
+     */
     public static TaskHandle runEntity(Plugin plugin, Entity entity, Runnable task, Runnable retired) {
         if (entity == null || !entity.isValid()) { retired.run(); return NOOP; }
-        // 插件已禁用（onDisable/关服）时无法注册 scheduler 任务，降级为直接执行。
-        // 关服清理（stopAll、手持烤串结算等）依赖该语义，绝不可改走 retired 而跳过。
+        // 插件已禁用(onDisable/关服)时无法注册 scheduler 任务,降级为直接执行.
+        // 关服清理(stopAll,手持烤串结算等)依赖该语义,绝不可改走 retired 而跳过.
         if (!plugin.isEnabled()) {
             try {
                 task.run();
@@ -155,7 +178,7 @@ public final class PaperScheduler {
             }
             return NOOP;
         }
-        // EntityScheduler 可能在返回 null 前已经执行 retired；不要重复调用。
+        // EntityScheduler 可能在返回 null 前已经执行 retired;不要重复调用.
         ScheduledTask scheduled = entity.getScheduler().run(plugin, ignored -> task.run(), retired);
         return wrap(scheduled);
     }
@@ -164,7 +187,7 @@ public final class PaperScheduler {
         return runEntityLater(plugin, entity, task, NOOP_RUNNABLE, delayTicks);
     }
 
-    /** 带退休回调的延迟 entity 调度；调度器无法接受任务时保证调用 retired。 */
+    /** 延迟在实体所属线程执行; 实体无效或调度器接不了任务时保证调用一次 {@code retired}. */
     public static TaskHandle runEntityLater(Plugin plugin, Entity entity, Runnable task, Runnable retired, long delayTicks) {
         AtomicBoolean retiredCalled = new AtomicBoolean();
         Runnable retiredOnce = () -> {
@@ -188,6 +211,7 @@ public final class PaperScheduler {
         return runEntityTimer(plugin, entity, task, NOOP_RUNNABLE, delayTicks, periodTicks);
     }
 
+    /** 定时在实体所属线程执行; 实体无效或调度器接不了任务时调用 {@code retired}. */
     public static TaskHandle runEntityTimer(
             Plugin plugin,
             Entity entity,
@@ -218,6 +242,7 @@ public final class PaperScheduler {
         return Math.max(1L, ticks);
     }
 
+    /** 当前是不是 Folia. */
     public static boolean isFolia() {
         return FOLIA;
     }
