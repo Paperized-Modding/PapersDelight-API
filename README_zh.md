@@ -8,6 +8,7 @@
   <img src="https://img.shields.io/badge/Java-21-orange" alt="Java 21">
   <img src="https://img.shields.io/badge/Paper%20%2F%20Folia-1.21.x-3fb950" alt="Paper / Folia 1.21.x">
   <img src="https://img.shields.io/badge/Addon-API-5865F2" alt="附属插件 API">
+  <img src="https://img.shields.io/badge/License-GPL%20v3-blue" alt="GPL-3.0">
 </p>
 
 <p align="center">
@@ -159,28 +160,6 @@ cd example
 - 启动时请用 `PapersDelightApi.isCompatible(你编译时的版本)` 判断，而不是硬编码版本号。
 - `dev.tako.papersdelight.api.*` 豁免混淆：类名与方法名都属于对外契约。
 
-## 🛠 从源码构建
-
-需要 **JDK 21**。
-
-```bash
-./gradlew build                 # 编译并产出 papersdelight-api-<版本>.jar（含 sources）
-./gradlew publishToMavenLocal   # 安装到 ~/.m2，便于本地联调附属插件
-```
-
-发布到远程仓库需要在 Gradle 用户目录的 `gradle.properties` 里配置凭据：
-
-```properties
-hezhongMavenUser=…
-hezhongMavenPassword=…
-```
-
-然后执行：
-
-```bash
-./gradlew publishMavenPublicationToHezhongReleasesRepository
-```
-
 ## 🙏 致谢
 
 - **作者：** Shimamura Tako、Mr Dg32z_、gukuan、Cold Leaves
@@ -188,4 +167,6 @@ hezhongMavenPassword=…
 
 ## 📄 授权
 
-当前仓库没有 `LICENSE` 文件——除另有说明外，一切权利归作者所有。API 的发布目的是让附属插件可以针对 PapersDelight 开发。
+本项目采用 **GNU General Public License v3.0**（GPL-3.0）——全文见 [LICENSE](LICENSE)。
+
+PapersDelight 插件本体单独分发；本仓库只包含面向附属插件的 API。

@@ -8,6 +8,7 @@
   <img src="https://img.shields.io/badge/Java-21-orange" alt="Java 21">
   <img src="https://img.shields.io/badge/Paper%20%2F%20Folia-1.21.x-3fb950" alt="Paper / Folia 1.21.x">
   <img src="https://img.shields.io/badge/Addon-API-5865F2" alt="Addon API">
+  <img src="https://img.shields.io/badge/License-GPL%20v3-blue" alt="GPL-3.0">
 </p>
 
 <p align="center">
@@ -160,28 +161,6 @@ cd example
 - Always verify with `PapersDelightApi.isCompatible(yourCompiledVersion)` at startup instead of hard-coding versions.
 - `dev.tako.papersdelight.api.*` is obfuscation-exempt: class and member names are part of the public contract.
 
-## 🛠 Building from source
-
-Requires **JDK 21**.
-
-```bash
-./gradlew build                 # compiles and produces papersdelight-api-<version>.jar (+ sources)
-./gradlew publishToMavenLocal   # installs into ~/.m2 for local addon testing
-```
-
-Publishing to the remote repository needs credentials in the Gradle user home (`gradle.properties`):
-
-```properties
-hezhongMavenUser=…
-hezhongMavenPassword=…
-```
-
-then:
-
-```bash
-./gradlew publishMavenPublicationToHezhongReleasesRepository
-```
-
 ## 🙏 Credits
 
 - **Authors:** Shimamura Tako, Mr Dg32z_, gukuan, Cold Leaves
@@ -189,4 +168,6 @@ then:
 
 ## 📄 License
 
-This repository currently ships no `LICENSE` file — all rights are reserved by the authors unless stated otherwise. The API is published for addon development against the PapersDelight plugin.
+This project is licensed under the **GNU General Public License v3.0** — see [LICENSE](LICENSE) for the full text.
+
+The PapersDelight plugin itself is distributed separately; this repository only contains the addon-facing API.
