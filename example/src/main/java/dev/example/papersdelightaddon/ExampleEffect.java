@@ -2,7 +2,7 @@ package dev.example.papersdelightaddon;
 
 import dev.tako.papersdelight.api.effect.TimedEffectManager;
 import org.bukkit.entity.Player;
-import org.bukkit.plugin.Plugin;
+import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 
@@ -10,7 +10,7 @@ public final class ExampleEffect extends TimedEffectManager {
 
     public static final String EFFECT_ID = "example_glow";
 
-    public ExampleEffect(Plugin plugin) {
+    public ExampleEffect(JavaPlugin plugin) {
         super(plugin, EFFECT_ID, "example:glow_effect", "effect.example.glow");
         configure(true, "yellow", "solid");
     }

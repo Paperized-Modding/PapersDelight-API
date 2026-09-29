@@ -9,11 +9,13 @@ repositories {
     mavenCentral()
     maven("https://repo.papermc.io/repository/maven-public/")
     maven("https://mvn.hezhongkj.top/releases/")
+    maven("https://repo-eo.catnies.top/releases/")
 }
 
 dependencies {
     compileOnly("io.papermc.paper:paper-api:1.21-R0.1-SNAPSHOT")
-    compileOnly("dev.tako:papersdelight-api:1.0.2")
+    compileOnly("dev.tako:papersdelight-api:2.0.0")
+    compileOnly("cn.chengzhimeow:CC-Scheduler:2.0.4")
 }
 
 java {
