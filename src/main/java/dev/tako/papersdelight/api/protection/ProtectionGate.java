@@ -3,6 +3,9 @@ package dev.tako.papersdelight.api.protection;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
 
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -10,6 +13,7 @@ import java.util.logging.Logger;
 /**
  * 方块保护检查: 玩家能不能和这个自定义方块交互; CE 或保护插件出问题时一律放行(fail-open).
  * <p><strong>必须在方块所属的主线程/region 线程同步调用</strong>.
+ * <p>调用热路径走 {@link MethodHandle}, 反射只用于接入时的一次性查找.
  */
 public final class ProtectionGate {
 
@@ -20,9 +24,9 @@ public final class ProtectionGate {
 
     private static volatile int state = 0;
 
-    private static Method ceInstance;
-    private static Method antiGriefProvider;
-    private static Method testMethod;
+    private static MethodHandle ceInstance;
+    private static MethodHandle antiGriefProvider;
+    private static MethodHandle testMethod;
     private static Object flagInteract;
 
     private static volatile boolean warned = false;
@@ -37,7 +41,7 @@ public final class ProtectionGate {
         if (!resolve() || flagInteract == null) return true;
 
         try {
-            Object ce = ceInstance.invoke(null);
+            Object ce = ceInstance.invoke();
             if (ce == null) return true;
             Object lib = antiGriefProvider.invoke(ce);
             if (lib == null) return true;
@@ -68,12 +72,14 @@ public final class ProtectionGate {
                 Method provider = ceClass.getMethod("antiGriefProvider");
                 Method test = provider.getReturnType()
                         .getMethod("test", Player.class, flagClass, Object.class);
+                Field flagField = flagClass.getField("INTERACT");
 
-                flagInteract = flagClass.getField("INTERACT").get(null);
+                MethodHandles.Lookup lookup = MethodHandles.lookup();
+                ceInstance = lookup.unreflect(instance);
+                antiGriefProvider = lookup.unreflect(provider);
+                testMethod = lookup.unreflect(test);
+                flagInteract = lookup.unreflectGetter(flagField).invoke();
 
-                ceInstance = instance;
-                antiGriefProvider = provider;
-                testMethod = test;
                 state = 1;
                 return true;
             } catch (Throwable t) {

@@ -4,7 +4,7 @@
 </h1>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Maven-dev.tako%3Apapersdelight--api%3A3.0.1-blue" alt="Maven 3.0.1">
+  <img src="https://img.shields.io/badge/Maven-dev.tako%3Apapersdelight--api%3A4.0.0-blue" alt="Maven 4.0.0">
   <img src="https://img.shields.io/badge/Java-21-orange" alt="Java 21">
   <img src="https://img.shields.io/badge/Paper%20%2F%20Folia-1.21.x-3fb950" alt="Paper / Folia 1.21.x">
   <img src="https://img.shields.io/badge/Addon-API-5865F2" alt="附属插件 API">
@@ -35,13 +35,14 @@
 | --- | --- |
 | `dev.tako.papersdelight.api` | `PapersDelightApi` —— API 版本契约（`VERSION`、`isCompatible(int)`） |
 | `…api.menu` | GUI 契约：`Menu`、`MenuItem`、`MenuModule`、`SimpleMenuModule`、`MenuEventHandler`、`ClickHandler` 与注解辅助；以及 `MenuService`——插件通过 Bukkit 服务管理器发布的运行时句柄 |
-| `…api.recipe` | `RecipeTypeRegistry` / `RecipeTypeHandler` —— 注册你自己的配方类型（由 CraftEngine 配置 section 解析） |
+| `…api.recipe` | `RecipeTypeRegistry` / `RecipeTypeHandler` —— 注册你自己的配方类型；它的输入是 CraftEngine 配置 section，实现它时请自行添加 CE 编译依赖 |
 | `…api.damage` | `DamageTypeDefinition` / `DamageTypeHandle` / `DamageTypeRegistrationState` —— 自定义伤害类型的数据契约 |
-| `…api.config` | `GenerationAwareIdSectionConfigParser`、`ParserGeneration` —— 可重载安全的 CraftEngine 配置 parser 基类 |
 | `…api.item` | 物品匹配器与高级标签门（`AdvancedTagGate`），用于把附属插件物品暴露给 PapersDelight 机制 |
 | `…api.heat`、`…api.cold`、`…api.protection` | 门（Gate）：让附属插件告诉 PapersDelight 什么算热源/冷源，或某次交互是否受保护 |
 
-这里的一切都是**契约**：接口、record、builder 与门。本 artifact 刻意**不含菜单引擎、效果引擎、CraftEngine 工具与调度器**——运行时实现全部由 PapersDelight 主插件持有，因此引入这份 API 不会给你的附属插件带来任何第三方依赖。
+这里的一切都是**契约**：接口、record、builder、门，以及少量零依赖小助手。本 artifact 刻意**不含菜单引擎、效果引擎、CraftEngine 工具与调度器**——运行时实现全部由 PapersDelight 主插件持有，因此引入这份 API 不会给你的附属插件带来任何第三方依赖。
+
+唯一有意的平台耦合是 `RecipeTypeHandler`：它的参数类型本身就是 CraftEngine 配置 section（CE 是主插件的平台，不是可选附件）。反射调用也已经去掉，注解分发与 AntiGriefLib 保护桥接都走 `MethodHandle`，不再用 `Method#invoke`。
 
 ## 🚀 快速开始
 
@@ -58,7 +59,7 @@ repositories {
 ```kotlin
 dependencies {
     compileOnly("io.papermc.paper:paper-api:1.21-R0.1-SNAPSHOT")
-    compileOnly("dev.tako:papersdelight-api:3.0.1")
+    compileOnly("dev.tako:papersdelight-api:4.0.0")
 }
 ```
 
@@ -66,7 +67,7 @@ dependencies {
 
 ```groovy
 dependencies {
-    compileOnly 'dev.tako:papersdelight-api:3.0.1'
+    compileOnly 'dev.tako:papersdelight-api:4.0.0'
 }
 ```
 
@@ -81,7 +82,7 @@ dependencies {
 <dependency>
     <groupId>dev.tako</groupId>
     <artifactId>papersdelight-api</artifactId>
-    <version>3.0.1</version>
+    <version>4.0.0</version>
     <scope>provided</scope>
 </dependency>
 ```
@@ -161,9 +162,10 @@ cd example
 
 ## 🔢 版本与兼容性
 
-- API 与插件本体**独立版本号**（这里是 `3.x`，插件是 `PapersDelight 1.2.x`）。
-- **3.0.0 是不兼容版本**：所有实现都移出 API。`MenuManager`、`TimedEffectManager`、`EffectPdcStore`、`CraftEngineUtil`、`DamageTypes` 与旧的 `api.util` 工具现在都在 PapersDelight 主插件里，API 也不再依赖 CC-Scheduler（主插件内部依然用 CC-Scheduler 调度，那是插件自己的事）。
+- API 与插件本体**独立版本号**（这里是 `4.x`，插件是 `PapersDelight 1.2.x`）。
+- **4.0.0 是不兼容版本**：主插件内部的 CraftEngine 配置 parser 基类（`GenerationAwareIdSectionConfigParser`、`ParserGeneration`）移出 API；反射调用换成 `MethodHandle`（`AnnotationHandlerRegistrar`、`ProtectionGate`）。
 - **3.0.1** 只是把文档里已经承诺的单向 `DamageTypeHandle#downgrade()` 公开，其余没变。
+- **3.0.0 是不兼容版本**：所有实现都移出 API。`MenuManager`、`TimedEffectManager`、`EffectPdcStore`、`CraftEngineUtil`、`DamageTypes` 与旧的 `api.util` 工具现在都在 PapersDelight 主插件里，API 也不再依赖 CC-Scheduler（主插件内部依然用 CC-Scheduler 调度，那是插件自己的事）。
 - 需要主插件的 GUI 引擎时，它是以服务形式发布的：`MenuService.get()`，返回 `null` 说明没装 PapersDelight 或版本过旧。
 - 次版本号只做**新增**；兼容区间由 `PapersDelightApi.MINIMUM_COMPATIBLE_VERSION` ~ `PapersDelightApi.VERSION` 表达。
 - 启动时请用 `PapersDelightApi.isCompatible(你编译时的版本)` 判断，而不是硬编码版本号。

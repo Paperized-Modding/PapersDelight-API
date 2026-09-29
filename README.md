@@ -4,7 +4,7 @@
 </h1>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Maven-dev.tako%3Apapersdelight--api%3A3.0.1-blue" alt="Maven 3.0.1">
+  <img src="https://img.shields.io/badge/Maven-dev.tako%3Apapersdelight--api%3A4.0.0-blue" alt="Maven 4.0.0">
   <img src="https://img.shields.io/badge/Java-21-orange" alt="Java 21">
   <img src="https://img.shields.io/badge/Paper%20%2F%20Folia-1.21.x-3fb950" alt="Paper / Folia 1.21.x">
   <img src="https://img.shields.io/badge/Addon-API-5865F2" alt="Addon API">
@@ -35,13 +35,14 @@
 | --- | --- |
 | `dev.tako.papersdelight.api` | `PapersDelightApi` — API version contract (`VERSION`, `isCompatible(int)`) |
 | `…api.menu` | GUI contracts: `Menu`, `MenuItem`, `MenuModule`, `SimpleMenuModule`, `MenuEventHandler`, `ClickHandler`, annotation helpers — plus `MenuService`, the runtime handle the plugin publishes through the Bukkit service manager |
-| `…api.recipe` | `RecipeTypeRegistry` / `RecipeTypeHandler` — register your own recipe types parsed from CraftEngine config sections |
+| `…api.recipe` | `RecipeTypeRegistry` / `RecipeTypeHandler` — register your own recipe types. Its currency is a CraftEngine config section, so add CraftEngine to your own compile classpath if you implement it |
 | `…api.damage` | `DamageTypeDefinition` / `DamageTypeHandle` / `DamageTypeRegistrationState` — data contracts for custom damage types |
-| `…api.config` | `GenerationAwareIdSectionConfigParser`, `ParserGeneration` — base classes for reload-safe CraftEngine config parsers |
 | `…api.item` | Item matchers and the advanced-tag gate (`AdvancedTagGate`) used to expose addon items to PapersDelight mechanics |
 | `…api.heat`, `…api.cold`, `…api.protection` | Gates that let addons tell PapersDelight what counts as a heat/cold source, or whether an interaction is protected |
 
-Everything here is a **contract**: interfaces, records, builders and gates. The artifact deliberately contains **no menu engine, no effect engine, no CraftEngine helper and no scheduler** — the PapersDelight plugin owns every runtime implementation, so depending on this API never drags a third-party library into your addon.
+Everything here is a **contract**: interfaces, records, builders, gates and small zero-dependency helpers. The artifact deliberately contains **no menu engine, no effect engine, no CraftEngine helper and no scheduler** — the PapersDelight plugin owns every runtime implementation, so depending on this API never drags a third-party library into your addon.
+
+The one deliberate platform coupling is `RecipeTypeHandler`, whose parameter type *is* a CraftEngine config section (CraftEngine is the plugin's platform, not an optional add-on). Reflective invocation is gone as well: annotation dispatch and the AntiGriefLib protection bridge call through `MethodHandle`s, not `Method#invoke`.
 
 ## 🚀 Getting started
 
@@ -58,7 +59,7 @@ repositories {
 ```kotlin
 dependencies {
     compileOnly("io.papermc.paper:paper-api:1.21-R0.1-SNAPSHOT")
-    compileOnly("dev.tako:papersdelight-api:3.0.1")
+    compileOnly("dev.tako:papersdelight-api:4.0.0")
 }
 ```
 
@@ -66,7 +67,7 @@ dependencies {
 
 ```groovy
 dependencies {
-    compileOnly 'dev.tako:papersdelight-api:3.0.1'
+    compileOnly 'dev.tako:papersdelight-api:4.0.0'
 }
 ```
 
@@ -81,7 +82,7 @@ dependencies {
 <dependency>
     <groupId>dev.tako</groupId>
     <artifactId>papersdelight-api</artifactId>
-    <version>3.0.1</version>
+    <version>4.0.0</version>
     <scope>provided</scope>
 </dependency>
 ```
@@ -161,9 +162,10 @@ cd example
 
 ## 🔢 Versioning & compatibility
 
-- The API is versioned **independently** from the plugin (`3.x` here vs. `PapersDelight 1.2.x`).
-- **3.0.0 is a breaking release**: every implementation left the API. `MenuManager`, `TimedEffectManager`, `EffectPdcStore`, `CraftEngineUtil`, `DamageTypes` and the old `api.util` helpers now live inside the PapersDelight plugin, and the API no longer depends on CC-Scheduler (the plugin still schedules with CC-Scheduler internally — that is its own business).
+- The API is versioned **independently** from the plugin (`4.x` here vs. `PapersDelight 1.2.x`).
+- **4.0.0 is a breaking release**: the plugin-internal CraftEngine config-parser base (`GenerationAwareIdSectionConfigParser`, `ParserGeneration`) left the API, and reflective invocation was replaced with `MethodHandle`s (`AnnotationHandlerRegistrar`, `ProtectionGate`).
 - **3.0.1** only makes the documented one-way `DamageTypeHandle#downgrade()` public; nothing else changed.
+- **3.0.0 is a breaking release**: every implementation left the API. `MenuManager`, `TimedEffectManager`, `EffectPdcStore`, `CraftEngineUtil`, `DamageTypes` and the old `api.util` helpers now live inside the PapersDelight plugin, and the API no longer depends on CC-Scheduler (the plugin still schedules with CC-Scheduler internally — that is its own business).
 - Need the plugin’s GUI engine? It is published as a service: `MenuService.get()`; a `null` result means PapersDelight is missing or too old.
 - Minor bumps only **add** members; the compatibility window is expressed by
   `PapersDelightApi.MINIMUM_COMPATIBLE_VERSION` … `PapersDelightApi.VERSION`.
