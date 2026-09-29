@@ -4,7 +4,7 @@
 </h1>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Maven-dev.tako%3Apapersdelight--api%3A1.0.2-blue" alt="Maven 1.0.2">
+  <img src="https://img.shields.io/badge/Maven-dev.tako%3Apapersdelight--api%3A2.0.0-blue" alt="Maven 2.0.0">
   <img src="https://img.shields.io/badge/Java-21-orange" alt="Java 21">
   <img src="https://img.shields.io/badge/Paper%20%2F%20Folia-1.21.x-3fb950" alt="Paper / Folia 1.21.x">
   <img src="https://img.shields.io/badge/Addon-API-5865F2" alt="附属插件 API">
@@ -42,7 +42,7 @@
 | `…api.config` | `GenerationAwareIdSectionConfigParser`、`ParserGeneration` —— 可重载安全的 CraftEngine 配置 parser 基类 |
 | `…api.item` | 物品匹配器与高级标签门（`AdvancedTagGate`），用于把附属插件物品暴露给 PapersDelight 机制 |
 | `…api.heat`、`…api.cold`、`…api.protection` | 门（Gate）：让附属插件告诉 PapersDelight 什么算热源/冷源，或某次交互是否受保护 |
-| `…api.util` | `PaperScheduler`（Folia 感知任务封装 + `TaskHandle`）、`TextUtil`、`ParticleVisibility`、`ParticleThrottle` |
+| `cn.chengzhimeow.ccscheduler` | 调度统一走 **CC-Scheduler**（`CCScheduler.getInstance()`）：global / region / chunk / entity / async 任务，Paper 与 Folia 通用 |
 
 ## 🚀 快速开始
 
@@ -59,7 +59,7 @@ repositories {
 ```kotlin
 dependencies {
     compileOnly("io.papermc.paper:paper-api:1.21-R0.1-SNAPSHOT")
-    compileOnly("dev.tako:papersdelight-api:1.0.2")
+    compileOnly("dev.tako:papersdelight-api:2.0.0")
 }
 ```
 
@@ -67,7 +67,7 @@ dependencies {
 
 ```groovy
 dependencies {
-    compileOnly 'dev.tako:papersdelight-api:1.0.2'
+    compileOnly 'dev.tako:papersdelight-api:2.0.0'
 }
 ```
 
@@ -82,7 +82,7 @@ dependencies {
 <dependency>
     <groupId>dev.tako</groupId>
     <artifactId>papersdelight-api</artifactId>
-    <version>1.0.2</version>
+    <version>2.0.0</version>
     <scope>provided</scope>
 </dependency>
 ```
@@ -155,7 +155,9 @@ cd example
 
 ## 🔢 版本与兼容性
 
-- API 与插件本体**独立版本号**（这里是 `1.0.x`，插件是 `PapersDelight 1.2.0`）。
+- API 与插件本体**独立版本号**（这里是 `2.x`，插件是 `PapersDelight 1.2.x`）。
+- **2.0.0 是不兼容版本**：旧的 `dev.tako.papersdelight.api.util` 工具已移除，调度改用
+  [CC-Scheduler](https://repo-eo.catnies.top/#/releases/cn/chengzhimeow/CC-Scheduler)（作为本 artifact 的依赖发布）。
 - 次版本号只做**新增**；兼容区间由 `PapersDelightApi.MINIMUM_COMPATIBLE_VERSION` ~ `PapersDelightApi.VERSION` 表达。
 - 启动时请用 `PapersDelightApi.isCompatible(你编译时的版本)` 判断，而不是硬编码版本号。
 - `dev.tako.papersdelight.api.*` 豁免混淆：类名与方法名都属于对外契约。

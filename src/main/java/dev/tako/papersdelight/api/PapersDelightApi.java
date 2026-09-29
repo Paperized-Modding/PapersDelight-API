@@ -2,9 +2,9 @@ package dev.tako.papersdelight.api;
 
 public final class PapersDelightApi {
 
-    public static final int VERSION = 1;
+    public static final int VERSION = 2;
 
-    public static final int MINIMUM_COMPATIBLE_VERSION = 1;
+    public static final int MINIMUM_COMPATIBLE_VERSION = 2;
 
     private PapersDelightApi() {
     }

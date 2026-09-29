@@ -1,12 +1,14 @@
 [versions]
-apiModule = "1.0.2"
+apiModule = "2.0.0"
 
 paperApi = "1.21-R0.1-SNAPSHOT"
 craftEngine = "26.9.1"
 placeholderApi = "2.11.6"
+ccScheduler = "2.0.4"
 
 [libraries]
 paperApi = { module = "io.papermc.paper:paper-api", version.ref = "paperApi" }
 craftEngineCore = { module = "net.momirealms:craft-engine-core", version.ref = "craftEngine" }
 craftEngineBukkit = { module = "net.momirealms:craft-engine-bukkit", version.ref = "craftEngine" }
 placeholderApi = { module = "me.clip:placeholderapi", version.ref = "placeholderApi" }
+ccScheduler = { module = "cn.chengzhimeow:CC-Scheduler", version.ref = "ccScheduler" }

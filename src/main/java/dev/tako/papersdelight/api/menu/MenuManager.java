@@ -1,6 +1,5 @@
 package dev.tako.papersdelight.api.menu;
 
-import dev.tako.papersdelight.api.util.TextUtil;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
@@ -10,6 +9,9 @@ import org.bukkit.event.inventory.InventoryAction;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.event.inventory.InventoryDragEvent;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.minimessage.MiniMessage;
+import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 
@@ -65,6 +67,15 @@ public final class MenuManager implements Listener {
         registeredModules.remove(moduleId);
     }
 
+    /** 解析菜单标题: 先按 MiniMessage, 失败时回退传统 & 色码. */
+    private static Component parseTitle(String title) {
+        try {
+            return MiniMessage.miniMessage().deserialize(title);
+        } catch (Throwable ignored) {
+            return LegacyComponentSerializer.legacyAmpersand().deserialize(title);
+        }
+    }
+
     public void openMenu(Player player, String moduleId) {
         openMenu(player, moduleId, null);
     }
@@ -74,7 +85,7 @@ public final class MenuManager implements Listener {
         MenuModule module = registeredModules.get(moduleId);
         if (module == null) return;
         Menu menu = module.createMenu();
-        Inventory inv = Bukkit.createInventory(null, menu.getSize(), TextUtil.parse(menu.getTitle()));
+        Inventory inv = Bukkit.createInventory(null, menu.getSize(), parseTitle(menu.getTitle()));
         menu.getItems().forEach((slot, item) -> inv.setItem(slot, item.getItemStack()));
         player.openInventory(inv);
         openSessions.put(player.getUniqueId(), new MenuSession(module, menu, inv, onClose));

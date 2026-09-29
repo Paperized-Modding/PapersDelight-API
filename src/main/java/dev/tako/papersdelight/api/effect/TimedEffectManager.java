@@ -1,7 +1,5 @@
 package dev.tako.papersdelight.api.effect;
 
-import dev.tako.papersdelight.api.util.PaperScheduler;
-import dev.tako.papersdelight.api.util.TaskHandle;
 import net.kyori.adventure.bossbar.BossBar;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
@@ -9,10 +7,12 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
+import cn.chengzhimeow.ccscheduler.scheduler.CCScheduler;
+import cn.chengzhimeow.ccscheduler.task.CCTask;
 import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
-import org.bukkit.plugin.Plugin;
+import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.Collection;
 import java.util.List;
@@ -32,7 +32,7 @@ public abstract class TimedEffectManager implements Listener {
 
     private static final Map<String, TimedEffectManager> REGISTRY = new ConcurrentHashMap<>();
 
-    protected final Plugin plugin;
+    protected final JavaPlugin plugin;
     protected final String effectId;
     private final String qualifiedId;
     private final String nameKey;
@@ -45,7 +45,7 @@ public abstract class TimedEffectManager implements Listener {
     private BossBar.Color color = BossBar.Color.YELLOW;
     private BossBar.Overlay overlay = BossBar.Overlay.NOTCHED_20;
 
-    private TaskHandle tickTask;
+    private CCTask tickTask;
     private int internalTick;
 
     /**
@@ -53,7 +53,7 @@ public abstract class TimedEffectManager implements Listener {
      * @param qualifiedId 对外完整 key, 必须与施加该效果的 CE 注册 id 一致
      * @param nameKey BossBar 效果名的客户端翻译键
      */
-    protected TimedEffectManager(Plugin plugin, String effectId, String qualifiedId, String nameKey) {
+    protected TimedEffectManager(JavaPlugin plugin, String effectId, String qualifiedId, String nameKey) {
         this.plugin = plugin;
         this.effectId = effectId;
         this.qualifiedId = qualifiedId.toLowerCase(Locale.ROOT);
@@ -110,7 +110,7 @@ public abstract class TimedEffectManager implements Listener {
 
         if (tickTask == null || tickTask.isCancelled()) {
             Bukkit.getPluginManager().registerEvents(this, plugin);
-            tickTask = PaperScheduler.runGlobalTimer(plugin, this::tick, 1L, 2L);
+            tickTask = CCScheduler.getInstance().getGlobalRegionScheduler().runTaskTimer(plugin, 1L, 2L, this::tick);
         }
     }
 
@@ -296,7 +296,7 @@ public abstract class TimedEffectManager implements Listener {
             int remaining = session.endTick() - now;
             if (remaining <= 0) {
                 Player expired = player;
-                PaperScheduler.runEntity(plugin, player, () -> {
+                runOnPlayer(player, () -> {
                     expired.hideBossBar(session.bossBar());
                     onExpire(expired);
                 });
@@ -305,8 +305,26 @@ public abstract class TimedEffectManager implements Listener {
             }
 
             UUID playerId = entry.getKey();
-            PaperScheduler.runEntity(plugin, player, () -> tickPlayer(player, playerId, session, now));
+            runOnPlayer(player, () -> tickPlayer(player, playerId, session, now));
         }
+    }
+
+    /** 把任务派发到玩家所在线程; 插件已禁用(关服)时就地执行, 不走调度器. */
+    private void runOnPlayer(Player player, Runnable task) {
+        if (!plugin.isEnabled()) {
+            try {
+                task.run();
+            } catch (Throwable ignored) {
+            }
+            return;
+        }
+        CCScheduler.getInstance().getEntityScheduler().runTask(plugin, player, task);
+    }
+
+    /** 延迟版 {@link #runOnPlayer}; 插件已禁用时直接跳过(与旧的降级语义一致). */
+    private void runOnPlayerLater(Player player, Runnable task, long delayTicks) {
+        if (!plugin.isEnabled()) return;
+        CCScheduler.getInstance().getEntityScheduler().runTaskLater(plugin, player, Math.max(1L, delayTicks), task);
     }
 
     private void tickPlayer(Player player, UUID playerId, TimedEffectSession session, int now) {
@@ -350,7 +368,7 @@ public abstract class TimedEffectManager implements Listener {
     public void onPlayerJoin(PlayerJoinEvent event) {
         if (!enabled) return;
         Player player = event.getPlayer();
-        PaperScheduler.runEntityLater(plugin, player, () -> {
+        runOnPlayerLater(player, () -> {
             if (!player.isOnline()) return;
             EffectPdcRecord record = pdcStore.read(player);
             if (record == null || record.remainingTicks() <= 0) return;

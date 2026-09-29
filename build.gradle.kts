@@ -11,6 +11,7 @@ java {
 }
 
 dependencies {
+    api(libs.ccScheduler)
     compileOnly(libs.paperApi)
     compileOnly(libs.craftEngineCore)
     compileOnly(libs.craftEngineBukkit)

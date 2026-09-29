@@ -4,7 +4,7 @@
 </h1>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Maven-dev.tako%3Apapersdelight--api%3A1.0.2-blue" alt="Maven 1.0.2">
+  <img src="https://img.shields.io/badge/Maven-dev.tako%3Apapersdelight--api%3A2.0.0-blue" alt="Maven 2.0.0">
   <img src="https://img.shields.io/badge/Java-21-orange" alt="Java 21">
   <img src="https://img.shields.io/badge/Paper%20%2F%20Folia-1.21.x-3fb950" alt="Paper / Folia 1.21.x">
   <img src="https://img.shields.io/badge/Addon-API-5865F2" alt="Addon API">
@@ -42,7 +42,7 @@
 | `…api.config` | `GenerationAwareIdSectionConfigParser`, `ParserGeneration` — base classes for reload-safe CraftEngine config parsers |
 | `…api.item` | Item matchers and the advanced-tag gate (`AdvancedTagGate`) used to expose addon items to PapersDelight mechanics |
 | `…api.heat`, `…api.cold`, `…api.protection` | Gates that let addons tell PapersDelight what counts as a heat/cold source, or whether an interaction is protected |
-| `…api.util` | `PaperScheduler` (Folia-aware task helpers + `TaskHandle`), `TextUtil`, `ParticleVisibility`, `ParticleThrottle` |
+| `cn.chengzhimeow.ccscheduler` | Scheduling is delegated to **CC-Scheduler** (`CCScheduler.getInstance()`): global / region / chunk / entity / async tasks that work on both Paper and Folia |
 
 ## 🚀 Getting started
 
@@ -59,7 +59,7 @@ repositories {
 ```kotlin
 dependencies {
     compileOnly("io.papermc.paper:paper-api:1.21-R0.1-SNAPSHOT")
-    compileOnly("dev.tako:papersdelight-api:1.0.2")
+    compileOnly("dev.tako:papersdelight-api:2.0.0")
 }
 ```
 
@@ -67,7 +67,7 @@ dependencies {
 
 ```groovy
 dependencies {
-    compileOnly 'dev.tako:papersdelight-api:1.0.2'
+    compileOnly 'dev.tako:papersdelight-api:2.0.0'
 }
 ```
 
@@ -82,7 +82,7 @@ dependencies {
 <dependency>
     <groupId>dev.tako</groupId>
     <artifactId>papersdelight-api</artifactId>
-    <version>1.0.2</version>
+    <version>2.0.0</version>
     <scope>provided</scope>
 </dependency>
 ```
@@ -155,7 +155,9 @@ cd example
 
 ## 🔢 Versioning & compatibility
 
-- The API is versioned **independently** from the plugin (`1.0.x` here vs. `PapersDelight 1.2.0`).
+- The API is versioned **independently** from the plugin (`2.x` here vs. `PapersDelight 1.2.x`).
+- **2.0.0 is a breaking release**: the old `dev.tako.papersdelight.api.util` helpers were removed — scheduling now uses
+  [CC-Scheduler](https://repo-eo.catnies.top/#/releases/cn/chengzhimeow/CC-Scheduler) (declared as a dependency of this artifact).
 - Minor bumps only **add** members; the compatibility window is expressed by
   `PapersDelightApi.MINIMUM_COMPATIBLE_VERSION` … `PapersDelightApi.VERSION`.
 - Always verify with `PapersDelightApi.isCompatible(yourCompiledVersion)` at startup instead of hard-coding versions.

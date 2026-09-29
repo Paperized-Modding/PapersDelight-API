@@ -3,7 +3,7 @@ package dev.example.papersdelightaddon;
 import dev.tako.papersdelight.api.PapersDelightApi;
 import dev.tako.papersdelight.api.menu.MenuManager;
 import dev.tako.papersdelight.api.menu.SimpleMenuModule;
-import dev.tako.papersdelight.api.util.PaperScheduler;
+import cn.chengzhimeow.ccscheduler.scheduler.CCScheduler;
 import org.bukkit.plugin.java.JavaPlugin;
 
 public final class ExampleAddon extends JavaPlugin {
@@ -27,7 +27,8 @@ public final class ExampleAddon extends JavaPlugin {
                 .handler(new ExampleMenuHandler(effect))
                 .build());
 
-        PaperScheduler.runGlobalTimer(this, () -> getLogger().info("ExampleAddon heartbeat"), 200L, 1200L);
+        CCScheduler.getInstance().getGlobalRegionScheduler()
+                .runTaskTimer(this, 200L, 1200L, () -> getLogger().info("ExampleAddon heartbeat"));
 
         getLogger().info("ExampleAddon enabled (PapersDelight API v" + PapersDelightApi.VERSION + ")");
     }

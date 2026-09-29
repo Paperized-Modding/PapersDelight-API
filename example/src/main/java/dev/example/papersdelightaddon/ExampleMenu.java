@@ -2,7 +2,9 @@ package dev.example.papersdelightaddon;
 
 import dev.tako.papersdelight.api.menu.Menu;
 import dev.tako.papersdelight.api.menu.MenuItem;
-import dev.tako.papersdelight.api.util.TextUtil;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.minimessage.MiniMessage;
+import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
 
@@ -24,7 +26,15 @@ public final class ExampleMenu {
 
     private static ItemStack named(Material material, String name) {
         ItemStack stack = new ItemStack(material);
-        stack.editMeta(meta -> meta.displayName(TextUtil.parse(name)));
+        stack.editMeta(meta -> meta.displayName(parse(name)));
         return stack;
+    }
+
+    private static Component parse(String text) {
+        try {
+            return MiniMessage.miniMessage().deserialize(text);
+        } catch (Throwable ignored) {
+            return LegacyComponentSerializer.legacyAmpersand().deserialize(text);
+        }
     }
 }
