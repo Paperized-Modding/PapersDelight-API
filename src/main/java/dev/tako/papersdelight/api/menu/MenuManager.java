@@ -22,18 +22,16 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * GUI 管理器: 注册 {@link MenuModule}, 再按 moduleId 给玩家打开菜单.
- * <p>点击, 拖拽, 关闭事件统一由它接管, 未注册槽位与非交互槽位都会被锁死.
+ * GUI 管理器: 注册 {@link MenuModule} 后按 moduleId 给玩家打开菜单, 点击/拖拽/关闭事件由它接管.
+ * <p><strong>未注册槽位与非交互槽位都会被锁死</strong>, 物品不会随 GUI 丢失.
  */
 public final class MenuManager implements Listener {
 
     private static MenuManager instance;
     private final Map<UUID, MenuSession> openSessions = new ConcurrentHashMap<>();
     private final Map<String, MenuModule> registeredModules = new ConcurrentHashMap<>();
-    /** 每 tick 每玩家只处理一个点击,防止整理 mod 瞬间多点触发 GUI 切换 */
     private final Map<UUID, Integer> lastClickTick = new ConcurrentHashMap<>();
 
-    /** 错误日志文案的来源, 由宿主注入; 没注入就直接用内置 fallback. */
     private volatile BiFunction<String, String, String> messageResolver = (key, fallback) -> fallback;
 
     private MenuManager() {}
@@ -43,11 +41,7 @@ public final class MenuManager implements Listener {
         return instance;
     }
 
-    /**
-     * 注入错误日志的本地化文案, 由宿主插件在启动时调用.
-     *
-     * @param resolver 收 (key, fallback) 返回实际文案; 传 {@code null} 恢复成直接用 fallback
-     */
+    /** 注入错误日志文案, 由宿主在启动时调用; 传 {@code null} 恢复用 fallback. */
     public void setMessageResolver(BiFunction<String, String, String> resolver) {
         this.messageResolver = resolver != null ? resolver : (key, fallback) -> fallback;
     }
@@ -62,27 +56,20 @@ public final class MenuManager implements Listener {
         }
     }
 
-    /** 注册菜单模块, 之后才能用它的 id 打开. */
     public void registerModule(MenuModule module) {
         registeredModules.put(module.getId(), module);
     }
 
-    /** 注销模块; 已经打开的菜单不受影响. */
+    /** 注销模块; 已打开的菜单不受影响. */
     public void unregisterModule(String moduleId) {
         registeredModules.remove(moduleId);
     }
 
-    /** 打开 GUI, 关闭时不回调; moduleId 没注册就什么都不做. */
     public void openMenu(Player player, String moduleId) {
         openMenu(player, moduleId, null);
     }
 
-    /**
-     * 打开 GUI.
-     * <p><strong>玩家自己关掉菜单时也会回调 {@code onClose}</strong>.
-     *
-     * @param onClose 收到被关闭的 Inventory; 传 {@code null} 表示不需要
-     */
+    /** 玩家自己关掉菜单时同样会回调 {@code onClose}, 传 {@code null} 表示不需要. */
     public void openMenu(Player player, String moduleId, Consumer<Inventory> onClose) {
         MenuModule module = registeredModules.get(moduleId);
         if (module == null) return;
@@ -215,7 +202,6 @@ public final class MenuManager implements Listener {
         event.setCurrentItem(remainder.getAmount() <= 0 ? null : remainder);
     }
 
-    /** Jug 只有输入槽; 其他菜单保留碗/食材槽的快捷移动语义. */
     static String quickMoveTargetAction(String moduleId, ItemStack moving) {
         if ("jug".equals(moduleId)) return "input_slot";
         return moving.getType() == Material.BOWL ? "utensil_slot" : "ingredient_slot";

@@ -21,8 +21,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * 注册自定义伤害类型,按类型对实体造成伤害的入口, 供附属插件使用, 注册要在 bootstrap 阶段完成.
- * <p><strong>除参数为 {@code null} 以外不会抛异常</strong>, 注册能力缺失(1.21~1.21.3),注册失败,同 key 定义冲突都会降级成 {@link DamageTypeRegistrationState#FALLBACK} 并记日志.
+ * 注册自定义伤害类型并按类型对实体造成伤害, 供附属插件使用, 注册必须在 bootstrap 阶段完成.
+ * <p><strong>除参数为 {@code null} 外不会抛异常</strong>, 注册能力缺失(1.21~1.21.3), 注册失败或同 key 定义冲突都会降级为 {@link DamageTypeRegistrationState#FALLBACK} 并记日志.
  */
 public final class DamageTypes {
 
@@ -80,14 +80,7 @@ public final class DamageTypes {
         victim.damage(amount, source);
     }
 
-    /**
-     * 注册一个自定义伤害类型, 同一个定义重复注册会直接复用已有的句柄.
-     *
-     * @param context    Paper bootstrap 上下文
-     * @param definition 伤害类型定义
-     * @return 本次注册得到的句柄
-     * @throws NullPointerException 当 {@code context} 或 {@code definition} 为 {@code null} 时
-     */
+    /** 注册一个自定义伤害类型, 同一份定义重复注册会复用已有句柄. */
     @NotNull
     public static DamageTypeHandle register(@NotNull BootstrapContext context,
                                             @NotNull DamageTypeDefinition definition) {
@@ -138,27 +131,14 @@ public final class DamageTypes {
         }
     }
 
-    /**
-     * 查询本进程记录过的伤害类型句柄.
-     *
-     * @param key 伤害类型键
-     * @return 记录过的句柄, 没有则返回 {@code null}
-     */
+    /** 查询本进程记录过的伤害类型句柄, 没有则返回 {@code null}. */
     static DamageTypeHandle peek(Key key) {
         return HANDLES.get(key);
     }
 
     // ── 运行期解析 API ────────────────────────────────────────────────────────
 
-    /**
-     * 计算实际生效的伤害类型键.
-     * <p><strong>以运行期注册表里有没有这个键为准</strong>, 不看本进程注册是否成功; 自定义键与回退键都没有时返回 {@link #GENERIC_KEY}.
-     *
-     * @param customKey 自定义伤害类型键
-     * @param fallback  自定义键缺失时的回退键
-     * @return 实际生效的键, 恒非空
-     * @throws NullPointerException 当任一参数为 {@code null} 时
-     */
+    /** 按运行期注册表计算实际生效的键, 自定义键与回退键都没有时返回 {@link #GENERIC_KEY}. */
     @NotNull
     public static Key effectiveKey(@NotNull Key customKey, @NotNull Key fallback) {
         Objects.requireNonNull(customKey, "customKey");
@@ -172,39 +152,20 @@ public final class DamageTypes {
         return GENERIC_KEY;
     }
 
-    /**
-     * 计算句柄实际生效的伤害类型键, 等价于用句柄的 key 与 fallback 调 {@link #effectiveKey(Key, Key)}.
-     *
-     * @param handle 伤害类型句柄
-     * @return 实际生效的键, 恒非空
-     * @throws NullPointerException 当 {@code handle} 为 {@code null} 时
-     */
+    /** 计算句柄实际生效的键, 等价于 {@link #effectiveKey(Key, Key)}. */
     @NotNull
     public static Key effectiveKey(@NotNull DamageTypeHandle handle) {
         Objects.requireNonNull(handle, "handle");
         return effectiveKey(handle.getKey(), handle.getFallback());
     }
 
-    /**
-     * 解析出运行期真正使用的 {@link DamageType}, 注册表里查不到时回落到 {@link DamageType#GENERIC}.
-     *
-     * @param customKey 自定义伤害类型键
-     * @param fallback  自定义键缺失时的回退键
-     * @return 运行期伤害类型, 恒非空
-     * @throws NullPointerException 当任一参数为 {@code null} 时
-     */
+    /** 解析运行期真正使用的 {@link DamageType}, 注册表里查不到时回落到 {@link DamageType#GENERIC}. */
     @NotNull
     public static DamageType resolve(@NotNull Key customKey, @NotNull Key fallback) {
         return resolveType(effectiveKey(customKey, fallback));
     }
 
-    /**
-     * 解析句柄运行期真正使用的 {@link DamageType}.
-     *
-     * @param handle 伤害类型句柄
-     * @return 运行期伤害类型, 恒非空
-     * @throws NullPointerException 当 {@code handle} 为 {@code null} 时
-     */
+    /** 解析句柄运行期真正使用的 {@link DamageType}. */
     @NotNull
     public static DamageType resolve(@NotNull DamageTypeHandle handle) {
         Objects.requireNonNull(handle, "handle");
@@ -213,29 +174,12 @@ public final class DamageTypes {
 
     // ── 造成伤害 API ──────────────────────────────────────────────────────────
 
-    /**
-     * 对目标造成自定义伤害, 不带攻击者.
-     *
-     * @param victim 受伤实体
-     * @param amount 伤害数值
-     * @param handle 伤害类型句柄
-     * @throws NullPointerException 当 {@code victim} 或 {@code handle} 为 {@code null} 时
-     * @see #damage(LivingEntity, double, DamageTypeHandle, Entity)
-     */
+    /** 对目标造成自定义伤害, 不带攻击者. */
     public static void damage(@NotNull LivingEntity victim, double amount, @NotNull DamageTypeHandle handle) {
         damage(victim, amount, handle, null);
     }
 
-    /**
-     * 对目标造成自定义伤害.
-     * <p><strong>自定义伤害类型缺失时静默回落到 {@link DamageType#GENERIC}</strong>, 不会抛异常.
-     *
-     * @param victim 受伤实体
-     * @param amount 伤害数值
-     * @param handle 伤害类型句柄
-     * @param causer 攻击者, 可为 {@code null}
-     * @throws NullPointerException 当 {@code victim} 或 {@code handle} 为 {@code null} 时
-     */
+    /** 对目标造成自定义伤害, 伤害类型缺失时静默回落到 {@link DamageType#GENERIC}, 不会抛异常. */
     public static void damage(@NotNull LivingEntity victim,
                               double amount,
                               @NotNull DamageTypeHandle handle,
@@ -246,16 +190,7 @@ public final class DamageTypes {
         damageDispatcher.dispatch(victim, amount, effectiveKey, causer);
     }
 
-    /**
-     * 按伤害类型键对目标造成伤害, 不带攻击者.
-     *
-     * @param victim    受伤实体
-     * @param amount    伤害数值
-     * @param customKey 自定义伤害类型键
-     * @param fallback  自定义键缺失时的回退键
-     * @throws NullPointerException 当 {@code victim},{@code customKey} 或 {@code fallback} 为 {@code null} 时
-     * @see #damage(LivingEntity, double, Key, Key, Entity)
-     */
+    /** 按伤害类型键对目标造成伤害, 不带攻击者. */
     public static void damage(@NotNull LivingEntity victim,
                               double amount,
                               @NotNull Key customKey,
@@ -263,17 +198,7 @@ public final class DamageTypes {
         damage(victim, amount, customKey, fallback, null);
     }
 
-    /**
-     * 按伤害类型键对目标造成伤害.
-     * <p><strong>自定义伤害类型缺失时静默回落到回退键, 回退键也没有则回落到 {@link #GENERIC_KEY}</strong>, 不会抛异常.
-     *
-     * @param victim    受伤实体
-     * @param amount    伤害数值
-     * @param customKey 自定义伤害类型键
-     * @param fallback  自定义键缺失时的回退键
-     * @param causer    攻击者, 可为 {@code null}
-     * @throws NullPointerException 当 {@code victim},{@code customKey} 或 {@code fallback} 为 {@code null} 时
-     */
+    /** 按伤害类型键对目标造成伤害, 键缺失时按 customKey, fallback, {@link #GENERIC_KEY} 顺序回落. */
     public static void damage(@NotNull LivingEntity victim,
                               double amount,
                               @NotNull Key customKey,

@@ -7,8 +7,8 @@ import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.plugin.Plugin;
 
 /**
- * 限时效果的 PDC 存取: 把剩余 tick, 总时长, 等级和额外状态写进玩家存档, 无需数据库.
- * <p>存的是剩余量而不是到期时间戳, 所以离线期间冻结, 重连接着走; 额外状态由子类序列化成 {@code byte[]} 一并存下.
+ * 限时效果的 PDC 存取, 把剩余 tick, 总时长, 等级与额外状态写进玩家存档, 无需数据库.
+ * <p>存的是剩余量而不是到期时间戳, 所以离线期间冻结, 重连接着走.
  */
 public final class EffectPdcStore {
 
@@ -17,16 +17,13 @@ public final class EffectPdcStore {
     private final NamespacedKey coreKey;
     private final NamespacedKey extraKey;
 
-    /**
-     * @param plugin   插件实例, 用作 PDC key 的命名空间
-     * @param effectId 效果标识(如 {@code nourishment}, {@code tipsy}), 改了会丢存档
-     */
+    /** {@code effectId} 决定 PDC key, 改了会丢存档. */
     public EffectPdcStore(Plugin plugin, String effectId) {
         this.coreKey = new NamespacedKey(plugin, "effect_" + effectId);
         this.extraKey = new NamespacedKey(plugin, "effect_" + effectId + "_extra");
     }
 
-    /** 写入会话快照, {@code remainingTicks <= 0} 视为无效, 直接清除. */
+    /** 写入快照, {@code remainingTicks <= 0} 视为无效, 直接清除. */
     public void save(Player player, int remainingTicks, int totalTicks, int amplifier, byte[] extra) {
         if (player == null) return;
         if (remainingTicks <= 0) {
@@ -39,7 +36,7 @@ public final class EffectPdcStore {
         pdc.set(extraKey, PersistentDataType.BYTE_ARRAY, extra == null ? EMPTY : extra);
     }
 
-    /** 读回会话快照, 没有存档返回 {@code null}. */
+    /** 读回快照, 没有存档返回 {@code null}. */
     public EffectPdcRecord read(Player player) {
         if (player == null) return null;
         PersistentDataContainer pdc = player.getPersistentDataContainer();

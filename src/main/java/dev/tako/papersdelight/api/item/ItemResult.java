@@ -7,7 +7,6 @@ public record ItemResult(String item, int count, double chance) {
         chance = Math.max(0, Math.min(1, chance)); // 钳制到 [0, 1]
     }
 
-    /** 100% 产出的简写. */
     public ItemResult(String item, int count) {
         this(item, count, 1.0);
     }

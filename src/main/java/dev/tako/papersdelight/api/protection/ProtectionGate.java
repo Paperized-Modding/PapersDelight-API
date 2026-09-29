@@ -8,9 +8,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * 方块保护检查: 复用 CraftEngine 内置的 AntiGriefLib, 判断玩家能不能和自定义方块交互.
- * <p><strong>必须在方块所属的主线程/region 线程同步调用</strong>; CE 或保护插件出问题时一律放行(fail-open).
- * <p>只覆盖保护插件没取消 Bukkit 事件的残余场景, 事件已经被取消的由各监听器自己处理.
+ * 方块保护检查: 复用 CraftEngine 内置的 AntiGriefLib 判断玩家能不能和自定义方块交互, CE 或保护插件出问题时一律放行(fail-open).
+ * <p><strong>必须在方块所属的主线程/region 线程同步调用</strong>.
  */
 public final class ProtectionGate {
 
@@ -32,11 +31,7 @@ public final class ProtectionGate {
     private ProtectionGate() {
     }
 
-    /**
-     * 玩家能不能和这个位置的自定义方块交互.
-     *
-     * @return 允许返回 {@code true}; 只有保护插件明确拒绝才返回 {@code false}
-     */
+    /** 只有保护插件明确拒绝才返回 {@code false}. */
     public static boolean canInteract(Player player, Location location) {
         if (player == null || location == null) return true;
         // 必须先 resolve():Flag 常量只在解析成功后才有值
@@ -54,7 +49,6 @@ public final class ProtectionGate {
         }
     }
 
-    /** 反射链已经判定不可用, 供测试与诊断. */
     public static boolean isUnavailable() {
         return state == 2;
     }

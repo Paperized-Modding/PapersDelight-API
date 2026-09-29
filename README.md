@@ -1,10 +1,10 @@
 <h1 align="center">
-  <img src="pd_logo.png" width="110" alt="PapersDelight logo"><br>
+  <img src="pd_logo.png" width="360" alt="Paper&#39;s Delight logo"><br>
   PapersDelight API
 </h1>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Maven-dev.tako%3Apapersdelight--api%3A1.0.1-blue" alt="Maven 1.0.1">
+  <img src="https://img.shields.io/badge/Maven-dev.tako%3Apapersdelight--api%3A1.0.2-blue" alt="Maven 1.0.2">
   <img src="https://img.shields.io/badge/Java-21-orange" alt="Java 21">
   <img src="https://img.shields.io/badge/Paper%20%2F%20Folia-1.21.x-3fb950" alt="Paper / Folia 1.21.x">
   <img src="https://img.shields.io/badge/Addon-API-5865F2" alt="Addon API">
@@ -59,7 +59,7 @@ repositories {
 ```kotlin
 dependencies {
     compileOnly("io.papermc.paper:paper-api:1.21-R0.1-SNAPSHOT")
-    compileOnly("dev.tako:papersdelight-api:1.0.1")
+    compileOnly("dev.tako:papersdelight-api:1.0.2")
 }
 ```
 
@@ -67,7 +67,7 @@ dependencies {
 
 ```groovy
 dependencies {
-    compileOnly 'dev.tako:papersdelight-api:1.0.1'
+    compileOnly 'dev.tako:papersdelight-api:1.0.2'
 }
 ```
 
@@ -82,7 +82,7 @@ dependencies {
 <dependency>
     <groupId>dev.tako</groupId>
     <artifactId>papersdelight-api</artifactId>
-    <version>1.0.1</version>
+    <version>1.0.2</version>
     <scope>provided</scope>
 </dependency>
 ```

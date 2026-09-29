@@ -39,7 +39,15 @@ publishing {
             from(components["java"])
             pom {
                 name.set("PapersDelight API")
-                description.set("PapersDelight 对外 API（附属插件运行时链接契约）")
+                description.set("Addon API for PapersDelight")
+                url.set("https://github.com/PaperizedModding/PapersDelight-API")
+                licenses {
+                    license {
+                        name.set("GNU General Public License v3.0")
+                        url.set("https://www.gnu.org/licenses/gpl-3.0.html")
+                        distribution.set("repo")
+                    }
+                }
             }
         }
     }

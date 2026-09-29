@@ -8,9 +8,8 @@ import net.momirealms.craftengine.core.plugin.config.IdSectionConfigParser;
 import java.util.Objects;
 
 /**
- * 带 generation 判定的 {@link IdSectionConfigParser}: 失活那轮提交上来的数据会被直接跳过.
- * <p>给附属插件实现自己的 parser 用. PapersDelight 每轮加载会换一个新的 {@link ParserGeneration},
- * 只有当前生效的那一轮会真正解析和发布, 旧一轮留下的常驻 parser 不会污染新数据.
+ * 带 generation 判定的 {@link IdSectionConfigParser}: 已经失活的那轮提交上来的数据会被直接跳过.
+ * <p>给附属插件实现自己的 parser 用; PapersDelight 每轮加载换一个新的 {@link ParserGeneration}, 常驻 parser 不会拿旧数据污染新快照.
  */
 public abstract class GenerationAwareIdSectionConfigParser extends IdSectionConfigParser {
     private volatile ParserGeneration generation;
@@ -20,10 +19,7 @@ public abstract class GenerationAwareIdSectionConfigParser extends IdSectionConf
         this(generation, () -> { });
     }
 
-    /**
-     * @param generation   本轮解析绑定的 generation
-     * @param beforeCommit 提交快照前先跑的钩子, 可用来准备数据
-     */
+    /** {@code beforeCommit} 在提交快照前先跑一遍, 可用来准备数据. */
     protected GenerationAwareIdSectionConfigParser(ParserGeneration generation, Runnable beforeCommit) {
         this.generation = Objects.requireNonNull(generation, "generation");
         this.beforeCommit = Objects.requireNonNull(beforeCommit, "beforeCommit");
@@ -40,20 +36,11 @@ public abstract class GenerationAwareIdSectionConfigParser extends IdSectionConf
         return generation.isActive();
     }
 
-    /**
-     * generation 还在生效时执行状态变更.
-     *
-     * @return 真的执行了返回 {@code true}, generation 已失活返回 {@code false}
-     */
+    /** generation 已失活时返回 {@code false}, 不执行. */
     public final boolean runIfGenerationActive(Runnable mutation) {
         return generation.commitIfActive(mutation);
     }
 
-    /**
-     * generation 还在生效时提交快照, 提交前先跑一遍 {@code beforeCommit}.
-     *
-     * @return 真的提交了返回 {@code true}, generation 已失活返回 {@code false}
-     */
     public final boolean commitIfGenerationActive(Runnable commit) {
         return runIfGenerationActive(() -> {
             beforeCommit.run();

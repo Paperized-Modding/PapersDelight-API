@@ -24,10 +24,7 @@ public final class DamageTypeSupport {
     private static final @NotNull String ADAPTER_V1_21_11 =
             "dev.tako.papersdelight.bridge.v1_21_11.DamageTypeComposeRegistrar";
 
-    /**
-     * legacy 1.21.4 区间的适配器类名, 只为兼容旧引用保留.
-     * <p><strong>运行时不要依赖这个固定值</strong>, 请改用 {@link #currentAdapterClassName()}.
-     */
+    /** legacy 1.21.4 区间适配器的类名, 运行时请改用 {@link #currentAdapterClassName()}. */
     public static final @NotNull String ADAPTER_CLASS_NAME = ADAPTER_V1_21_4;
 
     private static final boolean REGISTRY_EVENT_CAPABILITY_PRESENT = computeRegistryEventCapabilityPresent();
@@ -37,45 +34,22 @@ public final class DamageTypeSupport {
         throw new UnsupportedOperationException("DamageTypeSupport is a utility class");
     }
 
-    /**
-     * 当前运行时有没有 Paper 1.21.4+ 的 damage type 注册事件能力.
-     *
-     * @return 有则 {@code true}, 缺类或缺字段都算没有
-     */
+    /** 当前运行时有没有 Paper 1.21.4+ 的伤害类型注册事件能力, 缺类或缺字段都算没有. */
     public static boolean isRegistryEventCapabilityPresent() {
         return REGISTRY_EVENT_CAPABILITY_PRESENT;
     }
 
-    /**
-     * legacy 1.21.4 适配器类在当前 classpath 里能不能加载.
-     * <p><strong>只探测 {@link #ADAPTER_CLASS_NAME}</strong>, 不代表当前运行版本的适配器存在; 判断当前版本请改用 {@link #currentAdapterClassName()}.
-     *
-     * @return 能加载则 {@code true}
-     */
+    /** legacy 1.21.4 适配器类在 classpath 里能不能加载, 不代表当前运行版本的适配器存在. */
     public static boolean isAdapterClassPresent() {
         return ADAPTER_CLASS_PRESENT;
     }
 
-    /**
-     * 按当前运行的 Minecraft 版本给出该用的适配器类名.
-     * <p>版本来自 {@link ServerBuildInfo#buildInfo()}, 不依赖 {@code Bukkit.server} 是否已赋值, 所以在 {@code PluginBootstrap.bootstrap} 阶段就能安全调用.
-     *
-     * @return 当前版本对应的适配器全限定类名
-     * @throws IllegalStateException 当当前版本不在支持范围内时
-     */
+    /** 按当前运行的 Minecraft 版本给出该用的适配器类名, 在 bootstrap 阶段即可安全调用. */
     public static @NotNull String currentAdapterClassName() {
         return adapterClassName(ServerBuildInfo.buildInfo().minecraftVersionId());
     }
 
-    /**
-     * 按给定的 Minecraft 版本字符串给出该用的适配器类名.
-     * <p>1.21.0~1.21.4 用 1.21.4 适配器(1.21.0~1.21.3 没有注册事件能力, 注册时会直接降级), 1.21.5~1.21.10 用 1.21.10 适配器, 1.21.11 与 26.1/26.2 用 1.21.11 适配器.
-     *
-     * @param minecraftVersion Minecraft 版本字符串, 可以带 {@code -R0.1-SNAPSHOT} 之类的后缀
-     * @return 对应的适配器全限定类名
-     * @throws NullPointerException  当 {@code minecraftVersion} 为 {@code null} 时
-     * @throws IllegalStateException 当版本不在支持范围内或格式非法时
-     */
+    /** 按给定的 Minecraft 版本字符串给出该用的适配器类名, 版本不受支持或格式非法时抛 {@link IllegalStateException}. */
     public static @NotNull String adapterClassName(@NotNull String minecraftVersion) {
         Objects.requireNonNull(minecraftVersion, "minecraftVersion");
 

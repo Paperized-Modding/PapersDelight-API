@@ -28,8 +28,8 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * CraftEngine 工具: 查/造自定义方块与物品.
- * <p>CE 没装或还没就绪时都不抛异常, 按各方法的文档返回兜底值; <strong>方块状态与属性的读写必须在方块所属的 region/chunk 线程调用</strong>.
+ * CraftEngine 工具: 查/造自定义方块与物品; CE 没装或未就绪时不抛异常, 按各方法文档返回兜底值.
+ * <p><strong>方块状态与属性的读写必须在方块所属的 region/chunk 线程调用</strong>.
  */
 public final class CraftEngineUtil {
     private static final Map<String, Material> BASE_MATERIAL_CACHE = new ConcurrentHashMap<>();
@@ -67,11 +67,7 @@ public final class CraftEngineUtil {
         return state.owner().value().id().toString();
     }
 
-    /**
-     * 方块当前的 CE 状态, 只在方块所在区块已被 CE 加载时才有值.
-     *
-     * @return 非自定义方块或区块未加载时返回 {@code null}
-     */
+    /** 只在方块所在区块已被 CE 加载时才有值; 非自定义方块或未加载时返回 {@code null}. */
     public static ImmutableBlockState getCustomBlockState(Block block) {
         if (block == null) return null;
         try {
@@ -148,7 +144,7 @@ public final class CraftEngineUtil {
         return blockId != null && ids.contains(blockId);
     }
 
-    /** CE 方块 ID 是否已注册; CE 还没加载任何方块时跳过校验, 一律返回 {@code true}. */
+    /** CE 尚未加载任何方块时跳过校验, 一律返回 {@code true}. */
     public static boolean isValidBlockId(String ceBlockId) {
         if (ceBlockId == null || ceBlockId.isEmpty()) return false;
         try {
@@ -164,7 +160,7 @@ public final class CraftEngineUtil {
         }
     }
 
-    /** CE 方块 ID 对应的原版 base Material(如 NOTE_BLOCK, TRIPWIRE); CE 未加载或 ID 不存在时返回 {@code null}. */
+    /** 对应的原版 base Material(如 NOTE_BLOCK); CE 未加载或 ID 不存在时返回 {@code null}. */
     public static Material getBaseMaterial(String ceBlockId) {
         if (ceBlockId == null || ceBlockId.isEmpty()) return null;
         Material cached = BASE_MATERIAL_CACHE.get(ceBlockId);
@@ -281,20 +277,14 @@ public final class CraftEngineUtil {
         return false;
     }
 
-    /** 物品的持久化标识: CE 物品给 CE ID, 原版物品给 Minecraft key; 配合 {@link #createItem(String, int)} 可以还原. */
+    /** CE 物品给 CE ID, 原版物品给 Minecraft key, 配合 {@link #createItem(String, int)} 可还原. */
     public static String getItemIdentifier(ItemStack stack) {
         if (stack == null || stack.isEmpty()) return null;
         String ceId = getCustomItemId(stack);
         return ceId != null ? ceId : stack.getType().getKey().toString();
     }
 
-    /**
-     * 物品制作后返还的容器 ID(炖菜返还碗, 饮品返还玻璃瓶).
-     * <p>大部分配方不会显式写容器, 所以容器回退要来这里查.
-     *
-     * @param itemId CE ID 或带 {@code minecraft:} 前缀的原版 ID
-     * @return 返还物 ID, 没有返还物或查询失败时返回 {@code null}
-     */
+    /** 制作后返还的容器 ID(炖菜返还碗, 饮品返还玻璃瓶); 没有返还物或查询失败时返回 {@code null}. */
     public static String getCraftRemainderId(String itemId) {
         if (itemId == null || itemId.isEmpty()) return null;
 

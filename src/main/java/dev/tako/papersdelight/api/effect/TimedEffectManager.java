@@ -22,13 +22,9 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * 限时效果管理器: 替子类管好倒计时, BossBar 与重登恢复.
- * <p>子类传好构造参数, 再按需覆写 {@link #onApply}, {@link #onRemove}, {@link #onRestore},
- * {@link #onExpire}, {@link #onEffectTick} 注入自己的逻辑; 有额外状态要持久化就再覆写
- * {@code serializeExtra} 和 {@code deserializeExtra}. 所有管理器共用一张静态表, 附属插件以
- * compileOnly 引入本 API 时和 PapersDelight 用的是同一份.
- * <p><strong>applyEffect, removeEffect 这类调用请放在玩家所在线程上</strong>, 管理器内部的倒计时和事件回调会自己调度;
- * 剩余时间按 PDC 存在玩家身上, 离线冻结, 重登后接着走, 主动移除和死亡会清掉 PDC, 不会复活.
+ * 限时效果管理器: 替子类管好倒计时, BossBar 与重登恢复, 所有管理器共用一张静态表, 附属插件 compileOnly 引入时与 PapersDelight 是同一份.
+ * <p>子类按需覆写 {@link #onApply}, {@link #onRemove}, {@link #onRestore}, {@link #onExpire} 与 {@link #onEffectTick} 注入逻辑, 有额外状态要持久化再覆写 {@link #serializeExtra} 与 {@link #deserializeExtra}.
+ * <p><strong>applyEffect 与 removeEffect 必须在玩家所在线程调用</strong>. 剩余时间存玩家 PDC, 离线冻结, 重登接着走, 主动移除与死亡会清掉 PDC.
  */
 public abstract class TimedEffectManager implements Listener {
 
@@ -53,10 +49,9 @@ public abstract class TimedEffectManager implements Listener {
     private int internalTick;
 
     /**
-     * @param plugin      插件实例, PDC key 与定时任务都用它
-     * @param effectId    效果短标识(如 {@code garlic}), 只用来拼 PDC key, 改了会丢存档
-     * @param qualifiedId 对外完整 key, 必须与施加该效果的 function 的 CE 注册 id 一致(如 {@code dumplings_delight:garlic_effect})
-     * @param nameKey     BossBar 效果名的客户端翻译键(如 {@code effect.brewinandchewin.tipsy}), 交给资源包做多语言
+     * @param effectId 效果短标识, 改了会丢存档
+     * @param qualifiedId 对外完整 key, 必须与施加该效果的 CE 注册 id 一致
+     * @param nameKey BossBar 效果名的客户端翻译键
      */
     protected TimedEffectManager(Plugin plugin, String effectId, String qualifiedId, String nameKey) {
         this.plugin = plugin;
@@ -71,7 +66,7 @@ public abstract class TimedEffectManager implements Listener {
 
     // ==================== 跨插件注册表 ====================
 
-    /** 对外完整效果 key, 必须与施加该效果的 function 的 CE 注册 id 一致, 不能从插件名推导. */
+    /** 对外完整效果 key. */
     public final String qualifiedId() {
         return qualifiedId;
     }
@@ -86,18 +81,12 @@ public abstract class TimedEffectManager implements Listener {
         return key == null ? null : REGISTRY.get(key.toLowerCase(Locale.ROOT));
     }
 
-    /**
-     * 该效果算不算有害效果, 默认 {@code false}(增益).
-     * <p>只有 {@code remove_random_effect} 的 {@code harmful_only=true} 模式会看它.
-     */
+    /** 该效果算不算有害效果, 默认 {@code false}(增益), 只有 {@code remove_random_effect} 的 {@code harmful_only=true} 模式会看它. */
     public boolean isHarmful() {
         return false;
     }
 
-    /**
-     * 该效果在 {@code remove_random_effect} 里算不算低优先级, 默认 {@code false}.
-     * <p>低优先级效果只在候选池里还有别的非低优先级效果时才参与随机移除, 玩家身上只剩低优先级效果时本次移除无效.
-     */
+    /** 该效果在 {@code remove_random_effect} 里算不算低优先级, 默认 {@code false}, 玩家身上只剩低优先级效果时本次移除无效. */
     public boolean isLowPriority() {
         return false;
     }
@@ -105,11 +94,8 @@ public abstract class TimedEffectManager implements Listener {
     // ==================== 配置与生命周期 ====================
 
     /**
-     * 子类在 {@code load()} 里调用, 注入外观配置; 第一次调用会顺便注册事件监听并启动 tick 循环.
-     *
-     * @param enabled   效果是否启用
-     * @param colorName BossBar 颜色名(PINK/BLUE/RED/GREEN/YELLOW/PURPLE/WHITE), 非法值保留默认
-     * @param styleName BossBar 样式名(SOLID/SEGMENTED_6/10/12/20), 非法值保留默认
+     * 子类在 {@code load()} 里调用注入外观配置, 第一次调用会顺便注册事件监听并启动 tick 循环.
+     * <p>{@code colorName} 与 {@code styleName} 传非法值时保留默认外观.
      */
     protected void configure(boolean enabled, String colorName, String styleName) {
         this.enabled = enabled;
@@ -181,7 +167,7 @@ public abstract class TimedEffectManager implements Listener {
         applyEffect(player, durationTicks, 0);
     }
 
-    /** 施加效果, 重复施加会刷新持续时间; 效果没启用, 玩家为 {@code null} 或时长为 0 时直接忽略. */
+    /** 施加效果, 重复施加会刷新持续时间, 效果没启用, 玩家为 {@code null} 或时长为 0 时直接忽略. */
     public void applyEffect(Player player, int durationTicks, int amplifier) {
         if (!enabled || player == null || durationTicks <= 0) return;
 
@@ -198,8 +184,8 @@ public abstract class TimedEffectManager implements Listener {
     }
 
     /**
-     * 合并施加: <strong>重复施加时时长和等级各取较大值, 而不是直接覆盖</strong>.
-     * <p>给 "喝下去" 这类路径用, 喝一杯更短的酒不会缩短已有效果, 更低等级也不会降级.
+     * 合并施加, 给 "喝下去" 这类路径用.
+     * <p><strong>重复施加时时长和等级各取较大值</strong>, 而不是直接覆盖, 更短或更低等级不会削弱已有效果.
      */
     public void applyEffectMerging(Player player, int durationTicks, int amplifier) {
         if (player == null) return;
@@ -244,7 +230,7 @@ public abstract class TimedEffectManager implements Listener {
         return player != null && getRemainingTicks(player) > 0;
     }
 
-    /** 施加时的总时长 tick, 用来还原 BossBar 进度; 没有会话返回 0. */
+    /** 施加时的总时长 tick, 用来还原 BossBar 进度, 没有会话返回 0. */
     public int getTotalTicks(Player player) {
         if (player == null) return 0;
         TimedEffectSession session = sessions.get(player.getUniqueId());
@@ -258,10 +244,7 @@ public abstract class TimedEffectManager implements Listener {
         return session == null ? -1 : session.amplifier();
     }
 
-    /**
-     * 从持久化数据恢复会话, 让效果在重登后接着走.
-     * <p>恢复不算一次新施加, 所以只触发 {@link #onRestore}, 不触发 {@link #onApply}.
-     */
+    /** 从持久化数据恢复会话, 让效果在重登后接着走, 只触发 {@link #onRestore}, 不触发 {@link #onApply}. */
     public void restoreSession(Player player, int remainingTicks, int totalTicks, int amplifier) {
         if (!enabled || player == null || remainingTicks <= 0) return;
 
@@ -385,32 +368,23 @@ public abstract class TimedEffectManager implements Listener {
 
     // ==================== 子类钩子 ====================
 
-    /** 效果施加成功后的副作用, 默认什么都不做. */
+    /** 效果施加成功后的副作用. */
     protected void onApply(Player player, int durationTicks, int amplifier) {
     }
 
-    /**
-     * 效果被移除后的清理, 默认什么都不做.
-     *
-     * @param cause 移除原因, 可以据此区分处理
-     */
+    /** 效果被移除后的清理, 可据 {@code cause} 区分处理. */
     protected void onRemove(Player player, RemovalCause cause) {
     }
 
-    /** 从 PDC 恢复后的副作用, 默认什么都不做. */
+    /** 从 PDC 恢复后的副作用. */
     protected void onRestore(Player player, int amplifier) {
     }
 
-    /** 效果自然到期后被调用, 默认什么都不做. */
+    /** 效果自然到期后被调用. */
     protected void onExpire(Player player) {
     }
 
-    /**
-     * 每个生效中的会话每 2 tick 调用一次, 在玩家所在线程执行.
-     *
-     * @param amplifier 当前等级
-     * @param now       当前内部 tick
-     */
+    /** 每个生效中的会话每 2 tick 调用一次, 在玩家所在线程执行. */
     protected void onEffectTick(Player player, int amplifier, int now) {
     }
 

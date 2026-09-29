@@ -22,12 +22,12 @@ public final class AdvancedTagGate {
     private AdvancedTagGate() {
     }
 
-    /** 注册判定实现, 通常在 PapersDelight 启动时调用; 传 {@code null} 会抛异常. */
+    /** 通常在 PapersDelight 启动时调用; 传 {@code null} 会抛异常. */
     public static void register(BiPredicate<ItemStack, String> resolver) {
         register(resolver, null);
     }
 
-    /** 注册判定实现与标签展开实现(高级标签 → 已编译的物品 ID 列表). */
+    /** 额外注册展开实现(高级标签 → 已编译的物品 ID 列表). */
     public static void register(BiPredicate<ItemStack, String> resolver,
                                 Function<String, List<String>> expander) {
         service = Objects.requireNonNull(resolver, "resolver");
@@ -35,19 +35,13 @@ public final class AdvancedTagGate {
         warned = false;
     }
 
-    /** 注销实现, 通常在 PapersDelight 停止时调用. */
+    /** 通常在 PapersDelight 停止时调用. */
     public static void unregister() {
         service = null;
         expansionService = null;
     }
 
-    /**
-     * 物品有没有命中这个高级标签(依 PapersDelight 的 advanced_tags 定义).
-     *
-     * @param item 待判定物品
-     * @param tagId 高级标签 id, 带不带 {@code advtag:} 前缀都行
-     * @return 命中返回 {@code true}; 没注册实现或判定失败时返回 {@code false}
-     */
+    /** {@code tagId} 带不带 {@code advtag:} 前缀都行; 命中返回 {@code true}. */
     public static boolean isAdvancedTagged(ItemStack item, String tagId) {
         if (item == null || item.isEmpty() || tagId == null || tagId.isBlank()) return false;
         BiPredicate<ItemStack, String> resolver = service;
@@ -60,12 +54,7 @@ public final class AdvancedTagGate {
         }
     }
 
-    /**
-     * 把高级标签展开成已编译的物品 ID 列表.
-     *
-     * @param tagId 高级标签 id, 带不带 {@code advtag:} 前缀都行
-     * @return 有序且不可变的物品 ID 列表; 没注册实现或展开失败时是空列表
-     */
+    /** 展开成有序不可变的物品 ID 列表; 没注册实现或展开失败时是空列表. */
     public static List<String> resolveItems(String tagId) {
         if (tagId == null || tagId.isBlank()) return List.of();
         String normalized = tagId.startsWith("advtag:")
@@ -81,7 +70,6 @@ public final class AdvancedTagGate {
         }
     }
 
-    /** 当前没有可用的判定实现, 供测试与诊断. */
     public static boolean isUnavailable() {
         return service == null;
     }

@@ -10,10 +10,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
-/**
- * 不可变物品匹配表达式, 支持裸物品 ID, 普通标签({@code #namespace:tag})与高级标签({@code advtag:namespace:tag}).
- * <p>多个表达式之间是 any-of.
- */
+/** 不可变物品匹配表达式: 裸物品 ID, 普通标签 {@code #ns:tag} 与高级标签 {@code advtag:ns:tag}; 多个表达式之间是 any-of. */
 public final class ItemMatcher {
 
     private static final String ADVANCED_TAG_PREFIX = "advtag:";
@@ -76,7 +73,7 @@ public final class ItemMatcher {
         return expressions;
     }
 
-    /** 与表达式书写顺序无关的稳定键, 可以当索引或缓存 key; 真正判断命中还是要调 {@link #matches}. */
+    /** 与表达式书写顺序无关, 可当索引或缓存 key; 判断命中仍要用 {@link #matches}. */
     public String stableKey() {
         return stableKey;
     }

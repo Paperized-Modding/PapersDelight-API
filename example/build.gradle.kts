@@ -13,7 +13,7 @@ repositories {
 
 dependencies {
     compileOnly("io.papermc.paper:paper-api:1.21-R0.1-SNAPSHOT")
-    compileOnly("dev.tako:papersdelight-api:1.0.1")
+    compileOnly("dev.tako:papersdelight-api:1.0.2")
 }
 
 java {

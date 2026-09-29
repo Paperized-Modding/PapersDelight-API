@@ -6,8 +6,7 @@ import java.util.function.Supplier;
 
 /**
  * CraftEngine parser 的一轮注册, 只有生效的那一轮能发布数据.
- * <p>parser 实例在进程内常驻, 所以 PapersDelight 每轮加载换一个新的 generation, 旧的自然失活, 提交被拒;
- * 发布与失活共用一把读写锁, 避免旧 generation 覆盖新快照.
+ * <p>PapersDelight 每轮加载换一个新 generation, 旧的自动失活; 发布与失活共用一把读写锁, 旧 generation 覆盖不了新快照.
  */
 public final class ParserGeneration {
     private static final AtomicLong IDS = new AtomicLong();
@@ -41,11 +40,7 @@ public final class ParserGeneration {
         runExclusive(() -> active = true);
     }
 
-    /**
-     * generation 还生效时执行提交.
-     *
-     * @return 真的执行了返回 {@code true}, 已失活返回 {@code false}
-     */
+    /** 已失活时返回 {@code false}. */
     public boolean commitIfActive(Runnable commit) {
         COMMIT_LOCK.readLock().lock();
         try {
