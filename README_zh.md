@@ -4,7 +4,7 @@
 </h1>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Maven-dev.tako%3Apapersdelight--api%3A3.0.0-blue" alt="Maven 3.0.0">
+  <img src="https://img.shields.io/badge/Maven-dev.tako%3Apapersdelight--api%3A3.0.1-blue" alt="Maven 3.0.1">
   <img src="https://img.shields.io/badge/Java-21-orange" alt="Java 21">
   <img src="https://img.shields.io/badge/Paper%20%2F%20Folia-1.21.x-3fb950" alt="Paper / Folia 1.21.x">
   <img src="https://img.shields.io/badge/Addon-API-5865F2" alt="附属插件 API">
@@ -58,7 +58,7 @@ repositories {
 ```kotlin
 dependencies {
     compileOnly("io.papermc.paper:paper-api:1.21-R0.1-SNAPSHOT")
-    compileOnly("dev.tako:papersdelight-api:3.0.0")
+    compileOnly("dev.tako:papersdelight-api:3.0.1")
 }
 ```
 
@@ -66,7 +66,7 @@ dependencies {
 
 ```groovy
 dependencies {
-    compileOnly 'dev.tako:papersdelight-api:3.0.0'
+    compileOnly 'dev.tako:papersdelight-api:3.0.1'
 }
 ```
 
@@ -81,7 +81,7 @@ dependencies {
 <dependency>
     <groupId>dev.tako</groupId>
     <artifactId>papersdelight-api</artifactId>
-    <version>3.0.0</version>
+    <version>3.0.1</version>
     <scope>provided</scope>
 </dependency>
 ```
@@ -163,6 +163,7 @@ cd example
 
 - API 与插件本体**独立版本号**（这里是 `3.x`，插件是 `PapersDelight 1.2.x`）。
 - **3.0.0 是不兼容版本**：所有实现都移出 API。`MenuManager`、`TimedEffectManager`、`EffectPdcStore`、`CraftEngineUtil`、`DamageTypes` 与旧的 `api.util` 工具现在都在 PapersDelight 主插件里，API 也不再依赖 CC-Scheduler（主插件内部依然用 CC-Scheduler 调度，那是插件自己的事）。
+- **3.0.1** 只是把文档里已经承诺的单向 `DamageTypeHandle#downgrade()` 公开，其余没变。
 - 需要主插件的 GUI 引擎时，它是以服务形式发布的：`MenuService.get()`，返回 `null` 说明没装 PapersDelight 或版本过旧。
 - 次版本号只做**新增**；兼容区间由 `PapersDelightApi.MINIMUM_COMPATIBLE_VERSION` ~ `PapersDelightApi.VERSION` 表达。
 - 启动时请用 `PapersDelightApi.isCompatible(你编译时的版本)` 判断，而不是硬编码版本号。

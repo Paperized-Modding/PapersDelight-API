@@ -14,7 +14,6 @@ dependencies {
     compileOnly(libs.paperApi)
     compileOnly(libs.craftEngineCore)
     compileOnly(libs.craftEngineBukkit)
-    compileOnly(libs.placeholderApi)
 }
 
 tasks {

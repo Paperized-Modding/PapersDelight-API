@@ -45,7 +45,8 @@ public final class DamageTypeHandle {
         return state == DamageTypeRegistrationState.REGISTERED;
     }
 
-    void downgrade() {
+    /** 把已注册的句柄单向降级为 {@link DamageTypeRegistrationState#FALLBACK}. */
+    public void downgrade() {
         state = DamageTypeRegistrationState.FALLBACK;
     }
 

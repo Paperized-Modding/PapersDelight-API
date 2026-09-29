@@ -4,7 +4,7 @@
 </h1>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Maven-dev.tako%3Apapersdelight--api%3A3.0.0-blue" alt="Maven 3.0.0">
+  <img src="https://img.shields.io/badge/Maven-dev.tako%3Apapersdelight--api%3A3.0.1-blue" alt="Maven 3.0.1">
   <img src="https://img.shields.io/badge/Java-21-orange" alt="Java 21">
   <img src="https://img.shields.io/badge/Paper%20%2F%20Folia-1.21.x-3fb950" alt="Paper / Folia 1.21.x">
   <img src="https://img.shields.io/badge/Addon-API-5865F2" alt="Addon API">
@@ -58,7 +58,7 @@ repositories {
 ```kotlin
 dependencies {
     compileOnly("io.papermc.paper:paper-api:1.21-R0.1-SNAPSHOT")
-    compileOnly("dev.tako:papersdelight-api:3.0.0")
+    compileOnly("dev.tako:papersdelight-api:3.0.1")
 }
 ```
 
@@ -66,7 +66,7 @@ dependencies {
 
 ```groovy
 dependencies {
-    compileOnly 'dev.tako:papersdelight-api:3.0.0'
+    compileOnly 'dev.tako:papersdelight-api:3.0.1'
 }
 ```
 
@@ -81,7 +81,7 @@ dependencies {
 <dependency>
     <groupId>dev.tako</groupId>
     <artifactId>papersdelight-api</artifactId>
-    <version>3.0.0</version>
+    <version>3.0.1</version>
     <scope>provided</scope>
 </dependency>
 ```
@@ -163,6 +163,7 @@ cd example
 
 - The API is versioned **independently** from the plugin (`3.x` here vs. `PapersDelight 1.2.x`).
 - **3.0.0 is a breaking release**: every implementation left the API. `MenuManager`, `TimedEffectManager`, `EffectPdcStore`, `CraftEngineUtil`, `DamageTypes` and the old `api.util` helpers now live inside the PapersDelight plugin, and the API no longer depends on CC-Scheduler (the plugin still schedules with CC-Scheduler internally — that is its own business).
+- **3.0.1** only makes the documented one-way `DamageTypeHandle#downgrade()` public; nothing else changed.
 - Need the plugin’s GUI engine? It is published as a service: `MenuService.get()`; a `null` result means PapersDelight is missing or too old.
 - Minor bumps only **add** members; the compatibility window is expressed by
   `PapersDelightApi.MINIMUM_COMPATIBLE_VERSION` … `PapersDelightApi.VERSION`.
