@@ -58,7 +58,6 @@ repositories {
 
 ```kotlin
 dependencies {
-    compileOnly("io.papermc.paper:paper-api:1.21-R0.1-SNAPSHOT")
     compileOnly("dev.tako:papersdelight-api:4.0.0")
 }
 ```
@@ -87,7 +86,7 @@ dependencies {
 </dependency>
 ```
 
-> ℹ️ 这个 artifact **不声明任何依赖**：`paper-api`、CraftEngine、PlaceholderAPI 都只是编译期使用（不会写进 POM），请继续使用你自己的 Paper/Folia 编译目标（如果代码要用 CraftEngine 类型，自行添加 CE 依赖）。
+> ℹ️ 这个 artifact **不声明任何依赖**，内容只有契约，请自带 Paper/Folia 编译目标（API 基于 `paper-api 1.21` 编译）；如果代码要用 CraftEngine 类型，自行添加 CE 依赖。
 >
 > ℹ️ 主插件持有的 GUI 引擎以服务形式暴露，而不是类：
 >

@@ -58,7 +58,6 @@ repositories {
 
 ```kotlin
 dependencies {
-    compileOnly("io.papermc.paper:paper-api:1.21-R0.1-SNAPSHOT")
     compileOnly("dev.tako:papersdelight-api:4.0.0")
 }
 ```
@@ -87,7 +86,7 @@ dependencies {
 </dependency>
 ```
 
-> ℹ️ The artifact declares **no dependencies at all**: `paper-api`, CraftEngine and PlaceholderAPI are compile-time only and are not published, so keep using your own Paper/Folia compile target (and add CraftEngine yourself if your code touches CE types).
+> ℹ️ The artifact declares **no dependencies at all** and ships nothing but contracts, so bring your own Paper/Folia compile target (the API is built against `paper-api 1.21`), and add CraftEngine yourself if your code touches CE types.
 >
 > ℹ️ The plugin-owned GUI engine is reached through a service, not a class:
 >
