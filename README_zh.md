@@ -8,7 +8,7 @@
   <img src="https://img.shields.io/badge/Java-21-orange" alt="Java 21">
   <img src="https://img.shields.io/badge/Paper%20%2F%20Folia-1.21.x-3fb950" alt="Paper / Folia 1.21.x">
   <img src="https://img.shields.io/badge/Addon-API-5865F2" alt="附属插件 API">
-  <img src="https://img.shields.io/badge/License-GPL%20v3-blue" alt="GPL-3.0">
+  <img src="https://img.shields.io/badge/License-AGPL%20v3-blue" alt="AGPL-3.0">
 </p>
 
 <p align="center">
@@ -177,6 +177,6 @@ cd example
 
 ## 📄 授权
 
-本项目采用 **GNU General Public License v3.0**（GPL-3.0）——全文见 [LICENSE](LICENSE)。
+本项目采用 **GNU Affero General Public License v3.0**（AGPL-3.0）——全文见 [LICENSE](LICENSE)。
 
 PapersDelight 插件本体单独分发；本仓库只包含面向附属插件的 API。

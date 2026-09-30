@@ -42,8 +42,8 @@ publishing {
                 url.set("https://github.com/PaperizedModding/PapersDelight-API")
                 licenses {
                     license {
-                        name.set("GNU General Public License v3.0")
-                        url.set("https://www.gnu.org/licenses/gpl-3.0.html")
+                        name.set("GNU Affero General Public License v3.0")
+                        url.set("https://www.gnu.org/licenses/agpl-3.0.html")
                         distribution.set("repo")
                     }
                 }
