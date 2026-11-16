@@ -1,5 +1,5 @@
 [versions]
-apiModule = "4.0.0"
+apiModule = "4.2.0"
 
 paperApi = "1.21-R0.1-SNAPSHOT"
 craftEngine = "26.9.1"
